@@ -1,10 +1,8 @@
 (function () {
   const DEFAULT_CONFIG = {
     enabled: true,
-    storesCsvUrl:
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuiyu9L_E4nUxC6ixeEjD3YCE7_DxyB0cFd9nAxIEFRsF7RVynDQhUbsMmjhuguA/pub?output=csv",
-    callsCsvUrl:
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCl9wpZxP3GeGyP-b3865kPRVdI--4auVNA9IshAg7NvpVhvlXLG27GnYZVDwqtb-hgIEwJ5SrTPVY/pub?output=csv",
+    storesCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuiyu9L_E4nUxC6ixeEjD3YCE7_DxyB0cFd9nAxIEFRsF7RVynDQhUbsMmjhuguA/pub?output=csv",
+    callsCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSCl9wpZxP3GeGyP-b3865kPRVdI--4auVNA9IshAg7NvpVhvlXLG27GnYZVDwqtb-hgIEwJ5SrTPVY/pub?output=csv",
   };
   const userConfig = window.GOOGLE_SHEETS_CONFIG || {};
   const config = {
@@ -14,45 +12,20 @@
     callsCsvUrl: userConfig.callsCsvUrl || DEFAULT_CONFIG.callsCsvUrl,
   };
 
-  const MONTHS = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const THAI_MONTHS = new Map([
-    ["ม.ค.", 0],
-    ["มกราคม", 0],
-    ["ก.พ.", 1],
-    ["กุมภาพันธ์", 1],
-    ["มี.ค.", 2],
-    ["มีนาคม", 2],
-    ["เม.ย.", 3],
-    ["เมษายน", 3],
-    ["พ.ค.", 4],
-    ["พฤษภาคม", 4],
-    ["มิ.ย.", 5],
-    ["มิถุนายน", 5],
-    ["ก.ค.", 6],
-    ["กรกฎาคม", 6],
-    ["ส.ค.", 7],
-    ["สิงหาคม", 7],
-    ["ก.ย.", 8],
-    ["กันยายน", 8],
-    ["ต.ค.", 9],
-    ["ตุลาคม", 9],
-    ["พ.ย.", 10],
-    ["พฤศจิกายน", 10],
-    ["ธ.ค.", 11],
-    ["ธันวาคม", 11],
+    ["ม.ค.", 0], ["มกราคม", 0],
+    ["ก.พ.", 1], ["กุมภาพันธ์", 1],
+    ["มี.ค.", 2], ["มีนาคม", 2],
+    ["เม.ย.", 3], ["เมษายน", 3],
+    ["พ.ค.", 4], ["พฤษภาคม", 4],
+    ["มิ.ย.", 5], ["มิถุนายน", 5],
+    ["ก.ค.", 6], ["กรกฎาคม", 6],
+    ["ส.ค.", 7], ["สิงหาคม", 7],
+    ["ก.ย.", 8], ["กันยายน", 8],
+    ["ต.ค.", 9], ["ตุลาคม", 9],
+    ["พ.ย.", 10], ["พฤศจิกายน", 10],
+    ["ธ.ค.", 11], ["ธันวาคม", 11],
   ]);
 
   const storeAliases = {
@@ -62,33 +35,13 @@
     name: ["name", "store name", "store_name", "ชื่อสาขา", "ชื่อร้าน"],
     gm: ["gm"],
     dept: ["dept", "department", "ฝ่าย", "ผู้ดูแล", "ฝ่ายที่ดูแล"],
-    count: [
-      "สาขา",
-      "จำนวนสาขา",
-      "store count",
-      "stores",
-      "branch count",
-      "จำนวน",
-    ],
+    count: ["สาขา", "จำนวนสาขา", "store count", "stores", "branch count", "จำนวน"],
   };
 
   const callAliases = {
-    ticket: [
-      "ticket",
-      "ticket number",
-      "ticket num",
-      "ticket num...",
-      "เลขที่",
-      "เลขที่ใบงาน",
-    ],
+    ticket: ["ticket", "ticket number", "ticket num", "ticket num...", "เลขที่", "เลขที่ใบงาน"],
     storeCode: ["store code", "store_code", "storecode", "รหัสสาขา"],
-    storeName: [
-      "store name",
-      "store_name",
-      "storename",
-      "ชื่อสาขา",
-      "ชื่อร้าน",
-    ],
+    storeName: ["store name", "store_name", "storename", "ชื่อสาขา", "ชื่อร้าน"],
     date: ["date", "create date", "created date", "วันที่", "วันที่สร้าง"],
     month: ["month", "month name", "เดือน"],
     area: ["area", "พื้นที่", "เขต"],
@@ -99,30 +52,14 @@
     system: ["system", "ระบบ"],
     parts: ["damaged parts", "damaged parts (...", "parts", "ชิ้นส่วน"],
     cause: ["cause", "cause สาเหตุ", "สาเหตุ"],
-    product: [
-      "product type",
-      "ci_product type",
-      "ci product type",
-      "product",
-      "สินค้า",
-    ],
-    status: [
-      "status",
-      "job status",
-      "close status",
-      "closed status",
-      "สถานะ",
-      "สถานะงาน",
-      "สถานะปิดงาน",
-    ],
+    product: ["product type", "ci_product type", "ci product type", "product", "สินค้า"],
+    status: ["status", "job status", "close status", "closed status", "สถานะ", "สถานะงาน", "สถานะปิดงาน"],
     gm: ["gm"],
     dept: ["dept", "department", "ฝ่าย", "ผู้ดูแล", "ฝ่ายที่ดูแล"],
   };
 
   function cleanText(value) {
-    return String(value == null ? "" : value)
-      .replace(/^\uFEFF/, "")
-      .trim();
+    return String(value == null ? "" : value).replace(/^\uFEFF/, "").trim();
   }
 
   function normalizeHeader(value) {
@@ -138,9 +75,7 @@
     if (!text) return "";
     if (/[?&](output=csv|tqx=out:csv)/i.test(text)) return text;
 
-    const pubMatch = text.match(
-      /^(https:\/\/docs\.google\.com\/spreadsheets\/d\/e\/[^/]+)\/pubhtml\?(.+)$/i
-    );
+    const pubMatch = text.match(/^(https:\/\/docs\.google\.com\/spreadsheets\/d\/e\/[^/]+)\/pubhtml\?(.+)$/i);
     if (pubMatch) {
       const params = new URLSearchParams(pubMatch[2]);
       params.set("output", "csv");
@@ -206,26 +141,18 @@
 
   function pick(row, aliases) {
     const keys = Object.keys(row);
-    const normalizedKeys = keys.map((key) => ({
-      key,
-      normalized: normalizeHeader(key),
-    }));
+    const normalizedKeys = keys.map((key) => ({ key, normalized: normalizeHeader(key) }));
     for (const alias of aliases) {
       const normalizedAlias = normalizeHeader(alias);
-      const exact = normalizedKeys.find(
-        (item) => item.normalized === normalizedAlias
-      );
+      const exact = normalizedKeys.find((item) => item.normalized === normalizedAlias);
       if (exact && cleanText(row[exact.key])) return cleanText(row[exact.key]);
     }
     for (const alias of aliases) {
       const normalizedAlias = normalizeHeader(alias);
-      const partial = normalizedKeys.find(
-        (item) =>
-          item.normalized.includes(normalizedAlias) ||
-          normalizedAlias.includes(item.normalized)
+      const partial = normalizedKeys.find((item) =>
+        item.normalized.includes(normalizedAlias) || normalizedAlias.includes(item.normalized)
       );
-      if (partial && cleanText(row[partial.key]))
-        return cleanText(row[partial.key]);
+      if (partial && cleanText(row[partial.key])) return cleanText(row[partial.key]);
     }
     return "";
   }
@@ -239,9 +166,7 @@
   function monthHintIndex(value) {
     const text = cleanText(value);
     if (!text) return null;
-    const english = text.match(
-      /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i
-    );
+    const english = text.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i);
     if (english) {
       const key = english[1].slice(0, 3).toLowerCase();
       const index = MONTHS.findIndex((month) => month.toLowerCase() === key);
@@ -321,9 +246,7 @@
   }
 
   function mapRow(row, aliases) {
-    return Object.fromEntries(
-      Object.entries(aliases).map(([key, names]) => [key, pick(row, names)])
-    );
+    return Object.fromEntries(Object.entries(aliases).map(([key, names]) => [key, pick(row, names)]));
   }
 
   function mapStores(rows) {
@@ -367,18 +290,14 @@
         const item = mapRow(sourceRow, callAliases);
         const parsedDate = parseDateValue(item.date, item.month);
         if (parsedDate) {
-          item.date = `${parsedDate.getFullYear()}-${String(
-            parsedDate.getMonth() + 1
-          ).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+          item.date = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
           item.month = monthFromDate(item.date);
         }
         if (!item.month) item.month = monthFromDate(item.date);
         return item;
       })
       .filter((row) => row.ticket || row.storeCode || row.date);
-    const julyCheck = calls.filter(
-      (item) => item.date >= "2026-07-01" && item.date <= "2026-07-12"
-    ).length;
+    const julyCheck = calls.filter((item) => item.date >= "2026-07-01" && item.date <= "2026-07-12").length;
     console.info("Date parser month-aware OK. Jul 1-12 2026 calls:", julyCheck);
     return calls;
   }
@@ -386,10 +305,7 @@
   async function fetchCsv(url) {
     const finalUrl = csvUrl(url);
     const response = await fetch(finalUrl, { cache: "no-store" });
-    if (!response.ok)
-      throw new Error(
-        `Google Sheet load failed: ${response.status} ${finalUrl}`
-      );
+    if (!response.ok) throw new Error(`Google Sheet load failed: ${response.status} ${finalUrl}`);
     return response.text();
   }
 
@@ -398,20 +314,15 @@
     try {
       const rows = mapper(toObjects(await fetchCsv(url)));
       console.info(`${label} Google Sheet rows loaded:`, rows.length);
-      return rows.length ? rows : fallbackRows || [];
+      return rows.length ? rows : (fallbackRows || []);
     } catch (error) {
-      console.warn(
-        `${label} Google Sheet load failed. Using fallback data.`,
-        error
-      );
+      console.warn(`${label} Google Sheet load failed. Using fallback data.`, error);
       return fallbackRows || [];
     }
   }
 
   function enrichCallsWithStores(calls, stores) {
-    const storeByCode = new Map(
-      stores.map((store) => [cleanText(store.code), store])
-    );
+    const storeByCode = new Map(stores.map((store) => [cleanText(store.code), store]));
     const storeByTeam = new Map();
     stores.forEach((store) => {
       const team = cleanText(store.team);
@@ -435,8 +346,7 @@
 
   window.loadDashboardData = async function loadDashboardData() {
     const fallback = window.DASHBOARD_DATA || { stores: [], calls: [] };
-    if (!config.enabled || (!config.storesCsvUrl && !config.callsCsvUrl))
-      return fallback;
+    if (!config.enabled || (!config.storesCsvUrl && !config.callsCsvUrl)) return fallback;
 
     const [stores, calls] = await Promise.all([
       loadSheetRows(config.storesCsvUrl, mapStores, fallback.stores, "Stores"),
@@ -448,12 +358,8 @@
     window.DASHBOARD_DATA = {
       generatedAt: new Date().toISOString(),
       sourceFiles: {
-        stores: config.storesCsvUrl
-          ? "Google Sheets"
-          : fallback.sourceFiles?.stores,
-        calls: config.callsCsvUrl
-          ? "Google Sheets"
-          : fallback.sourceFiles?.calls,
+        stores: config.storesCsvUrl ? "Google Sheets" : fallback.sourceFiles?.stores,
+        calls: config.callsCsvUrl ? "Google Sheets" : fallback.sourceFiles?.calls,
       },
       stores,
       calls,
