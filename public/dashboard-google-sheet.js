@@ -1,8 +1,10 @@
 (function () {
   const DEFAULT_CONFIG = {
     enabled: true,
-    storesCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuiyu9L_E4nUxC6ixeEjD3YCE7_DxyB0cFd9nAxIEFRsF7RVynDQhUbsMmjhuguA/pub?output=csv",
-    callsCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz51QMZELZgPyqIWRGUJFqq7b0NJwpQq4rNBCPnKbEk8KIq8Lx8hTwOTvDsLkigqrLUPrbH81wD8Dm/pub?output=csv",
+    storesCsvUrl:
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRuiyu9L_E4nUxC6ixeEjD3YCE7_DxyB0cFd9nAxIEFRsF7RVynDQhUbsMmjhuguA/pub?output=csv",
+    callsCsvUrl:
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vQz51QMZELZgPyqIWRGUJFqq7b0NJwpQq4rNBCPnKbEk8KIq8Lx8hTwOTvDsLkigqrLUPrbH81wD8Dm/pub?output=csv",
   };
   const userConfig = window.GOOGLE_SHEETS_CONFIG || {};
   const config = {
@@ -11,21 +13,58 @@
     storesCsvUrl: userConfig.storesCsvUrl || DEFAULT_CONFIG.storesCsvUrl,
     callsCsvUrl: userConfig.callsCsvUrl || DEFAULT_CONFIG.callsCsvUrl,
   };
+  const CACHE_DB_NAME = "stat-cpr-dashboard-cache";
+  const CACHE_STORE_NAME = "dashboard-data";
+  const CACHE_KEY = [config.storesCsvUrl, config.callsCsvUrl].join("|");
+  const CALL_HEADER_RANGE = "A1:P1";
+  const CALL_RECENT_RANGE = "A100001:P200000";
+  const CALL_HISTORY_RANGES = [
+    "A1:P20000",
+    "A20001:P40000",
+    "A40001:P60000",
+    "A60001:P80000",
+    "A80001:P100000",
+  ];
 
-  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const MONTHS = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   const THAI_MONTHS = new Map([
-    ["ม.ค.", 0], ["มกราคม", 0],
-    ["ก.พ.", 1], ["กุมภาพันธ์", 1],
-    ["มี.ค.", 2], ["มีนาคม", 2],
-    ["เม.ย.", 3], ["เมษายน", 3],
-    ["พ.ค.", 4], ["พฤษภาคม", 4],
-    ["มิ.ย.", 5], ["มิถุนายน", 5],
-    ["ก.ค.", 6], ["กรกฎาคม", 6],
-    ["ส.ค.", 7], ["สิงหาคม", 7],
-    ["ก.ย.", 8], ["กันยายน", 8],
-    ["ต.ค.", 9], ["ตุลาคม", 9],
-    ["พ.ย.", 10], ["พฤศจิกายน", 10],
-    ["ธ.ค.", 11], ["ธันวาคม", 11],
+    ["ม.ค.", 0],
+    ["มกราคม", 0],
+    ["ก.พ.", 1],
+    ["กุมภาพันธ์", 1],
+    ["มี.ค.", 2],
+    ["มีนาคม", 2],
+    ["เม.ย.", 3],
+    ["เมษายน", 3],
+    ["พ.ค.", 4],
+    ["พฤษภาคม", 4],
+    ["มิ.ย.", 5],
+    ["มิถุนายน", 5],
+    ["ก.ค.", 6],
+    ["กรกฎาคม", 6],
+    ["ส.ค.", 7],
+    ["สิงหาคม", 7],
+    ["ก.ย.", 8],
+    ["กันยายน", 8],
+    ["ต.ค.", 9],
+    ["ตุลาคม", 9],
+    ["พ.ย.", 10],
+    ["พฤศจิกายน", 10],
+    ["ธ.ค.", 11],
+    ["ธันวาคม", 11],
   ]);
 
   const storeAliases = {
@@ -35,13 +74,33 @@
     name: ["name", "store name", "store_name", "ชื่อสาขา", "ชื่อร้าน"],
     gm: ["gm"],
     dept: ["dept", "department", "ฝ่าย", "ผู้ดูแล", "ฝ่ายที่ดูแล"],
-    count: ["สาขา", "จำนวนสาขา", "store count", "stores", "branch count", "จำนวน"],
+    count: [
+      "สาขา",
+      "จำนวนสาขา",
+      "store count",
+      "stores",
+      "branch count",
+      "จำนวน",
+    ],
   };
 
   const callAliases = {
-    ticket: ["ticket", "ticket number", "ticket num", "ticket num...", "เลขที่", "เลขที่ใบงาน"],
+    ticket: [
+      "ticket",
+      "ticket number",
+      "ticket num",
+      "ticket num...",
+      "เลขที่",
+      "เลขที่ใบงาน",
+    ],
     storeCode: ["store code", "store_code", "storecode", "รหัสสาขา"],
-    storeName: ["store name", "store_name", "storename", "ชื่อสาขา", "ชื่อร้าน"],
+    storeName: [
+      "store name",
+      "store_name",
+      "storename",
+      "ชื่อสาขา",
+      "ชื่อร้าน",
+    ],
     date: ["date", "create date", "created date", "วันที่", "วันที่สร้าง"],
     month: ["month", "month name", "เดือน"],
     area: ["area", "พื้นที่", "เขต"],
@@ -52,14 +111,30 @@
     system: ["system", "ระบบ"],
     parts: ["damaged parts", "damaged parts (...", "parts", "ชิ้นส่วน"],
     cause: ["cause", "cause สาเหตุ", "สาเหตุ"],
-    product: ["product type", "ci_product type", "ci product type", "product", "สินค้า"],
-    status: ["status", "job status", "close status", "closed status", "สถานะ", "สถานะงาน", "สถานะปิดงาน"],
+    product: [
+      "product type",
+      "ci_product type",
+      "ci product type",
+      "product",
+      "สินค้า",
+    ],
+    status: [
+      "status",
+      "job status",
+      "close status",
+      "closed status",
+      "สถานะ",
+      "สถานะงาน",
+      "สถานะปิดงาน",
+    ],
     gm: ["gm"],
     dept: ["dept", "department", "ฝ่าย", "ผู้ดูแล", "ฝ่ายที่ดูแล"],
   };
 
   function cleanText(value) {
-    return String(value == null ? "" : value).replace(/^\uFEFF/, "").trim();
+    return String(value == null ? "" : value)
+      .replace(/^\uFEFF/, "")
+      .trim();
   }
 
   function normalizeHeader(value) {
@@ -75,7 +150,9 @@
     if (!text) return "";
     if (/[?&](output=csv|tqx=out:csv)/i.test(text)) return text;
 
-    const pubMatch = text.match(/^(https:\/\/docs\.google\.com\/spreadsheets\/d\/e\/[^/]+)\/pubhtml\?(.+)$/i);
+    const pubMatch = text.match(
+      /^(https:\/\/docs\.google\.com\/spreadsheets\/d\/e\/[^/]+)\/pubhtml\?(.+)$/i
+    );
     if (pubMatch) {
       const params = new URLSearchParams(pubMatch[2]);
       params.set("output", "csv");
@@ -141,18 +218,26 @@
 
   function pick(row, aliases) {
     const keys = Object.keys(row);
-    const normalizedKeys = keys.map((key) => ({ key, normalized: normalizeHeader(key) }));
+    const normalizedKeys = keys.map((key) => ({
+      key,
+      normalized: normalizeHeader(key),
+    }));
     for (const alias of aliases) {
       const normalizedAlias = normalizeHeader(alias);
-      const exact = normalizedKeys.find((item) => item.normalized === normalizedAlias);
+      const exact = normalizedKeys.find(
+        (item) => item.normalized === normalizedAlias
+      );
       if (exact && cleanText(row[exact.key])) return cleanText(row[exact.key]);
     }
     for (const alias of aliases) {
       const normalizedAlias = normalizeHeader(alias);
-      const partial = normalizedKeys.find((item) =>
-        item.normalized.includes(normalizedAlias) || normalizedAlias.includes(item.normalized)
+      const partial = normalizedKeys.find(
+        (item) =>
+          item.normalized.includes(normalizedAlias) ||
+          normalizedAlias.includes(item.normalized)
       );
-      if (partial && cleanText(row[partial.key])) return cleanText(row[partial.key]);
+      if (partial && cleanText(row[partial.key]))
+        return cleanText(row[partial.key]);
     }
     return "";
   }
@@ -166,7 +251,9 @@
   function monthHintIndex(value) {
     const text = cleanText(value);
     if (!text) return null;
-    const english = text.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i);
+    const english = text.match(
+      /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i
+    );
     if (english) {
       const key = english[1].slice(0, 3).toLowerCase();
       const index = MONTHS.findIndex((month) => month.toLowerCase() === key);
@@ -246,7 +333,9 @@
   }
 
   function mapRow(row, aliases) {
-    return Object.fromEntries(Object.entries(aliases).map(([key, names]) => [key, pick(row, names)]));
+    return Object.fromEntries(
+      Object.entries(aliases).map(([key, names]) => [key, pick(row, names)])
+    );
   }
 
   function mapStores(rows) {
@@ -290,22 +379,29 @@
         const item = mapRow(sourceRow, callAliases);
         const parsedDate = parseDateValue(item.date, item.month);
         if (parsedDate) {
-          item.date = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+          item.date = `${parsedDate.getFullYear()}-${String(
+            parsedDate.getMonth() + 1
+          ).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
           item.month = monthFromDate(item.date);
         }
         if (!item.month) item.month = monthFromDate(item.date);
         return item;
       })
       .filter((row) => row.ticket || row.storeCode || row.date);
-    const julyCheck = calls.filter((item) => item.date >= "2026-07-01" && item.date <= "2026-07-12").length;
+    const julyCheck = calls.filter(
+      (item) => item.date >= "2026-07-01" && item.date <= "2026-07-12"
+    ).length;
     console.info("Date parser month-aware OK. Jul 1-12 2026 calls:", julyCheck);
     return calls;
   }
 
   async function fetchCsv(url) {
     const finalUrl = csvUrl(url);
-    const response = await fetch(finalUrl, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Google Sheet load failed: ${response.status} ${finalUrl}`);
+    const response = await fetch(finalUrl, { cache: "default" });
+    if (!response.ok)
+      throw new Error(
+        `Google Sheet load failed: ${response.status} ${finalUrl}`
+      );
     return response.text();
   }
 
@@ -314,15 +410,51 @@
     try {
       const rows = mapper(toObjects(await fetchCsv(url)));
       console.info(`${label} Google Sheet rows loaded:`, rows.length);
-      return rows.length ? rows : (fallbackRows || []);
+      return rows.length ? rows : fallbackRows || [];
     } catch (error) {
-      console.warn(`${label} Google Sheet load failed. Using fallback data.`, error);
+      console.warn(
+        `${label} Google Sheet load failed. Using fallback data.`,
+        error
+      );
       return fallbackRows || [];
     }
   }
 
+  function sheetRangeUrl(url, range) {
+    const rangedUrl = new URL(csvUrl(url));
+    rangedUrl.searchParams.set("range", range);
+    return rangedUrl.toString();
+  }
+
+  async function loadCallRange(range, fallbackRows = [], label = "Calls") {
+    try {
+      const rangeText = await fetchCsv(sheetRangeUrl(config.callsCsvUrl, range));
+      const hasHeader = range === "A1:P20000";
+      const csvText = hasHeader
+        ? rangeText
+        : `${(await fetchCsv(sheetRangeUrl(config.callsCsvUrl, CALL_HEADER_RANGE))).trimEnd()}\n${rangeText}`;
+      const rows = mapCalls(toObjects(csvText));
+      console.info(`${label} Google Sheet rows loaded:`, rows.length);
+      return rows.length ? rows : fallbackRows;
+    } catch (error) {
+      console.warn(`${label} Google Sheet load failed. Using fallback data.`, error);
+      return fallbackRows;
+    }
+  }
+
+  function mergeCalls(existing, incoming) {
+    const merged = new Map();
+    [...(existing || []), ...(incoming || [])].forEach((call, index) => {
+      const key = cleanText(call.ticket) || [call.date, call.storeCode, call.equipment, index].join("|");
+      merged.set(key, call);
+    });
+    return [...merged.values()];
+  }
+
   function enrichCallsWithStores(calls, stores) {
-    const storeByCode = new Map(stores.map((store) => [cleanText(store.code), store]));
+    const storeByCode = new Map(
+      stores.map((store) => [cleanText(store.code), store])
+    );
     const storeByTeam = new Map();
     stores.forEach((store) => {
       const team = cleanText(store.team);
@@ -344,26 +476,144 @@
     return calls;
   }
 
-  window.loadDashboardData = async function loadDashboardData() {
-    const fallback = window.DASHBOARD_DATA || { stores: [], calls: [] };
-    if (!config.enabled || (!config.storesCsvUrl && !config.callsCsvUrl)) return fallback;
+  function openDashboardCache() {
+    if (!("indexedDB" in window)) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open(CACHE_DB_NAME, 1);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(CACHE_STORE_NAME)) {
+            db.createObjectStore(CACHE_STORE_NAME);
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => resolve(null);
+      } catch (_error) {
+        resolve(null);
+      }
+    });
+  }
 
-    const [stores, calls] = await Promise.all([
+  async function readDashboardCache() {
+    const db = await openDashboardCache();
+    if (!db) return null;
+    return new Promise((resolve) => {
+      try {
+        const request = db
+          .transaction(CACHE_STORE_NAME, "readonly")
+          .objectStore(CACHE_STORE_NAME)
+          .get(CACHE_KEY);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => resolve(null);
+      } catch (_error) {
+        resolve(null);
+      }
+    }).finally(() => db.close());
+  }
+
+  async function writeDashboardCache(data) {
+    const db = await openDashboardCache();
+    if (!db) return;
+    await new Promise((resolve) => {
+      try {
+        const request = db
+          .transaction(CACHE_STORE_NAME, "readwrite")
+          .objectStore(CACHE_STORE_NAME)
+          .put(data, CACHE_KEY);
+        request.onsuccess = () => resolve();
+        request.onerror = () => resolve();
+      } catch (_error) {
+        resolve();
+      }
+    });
+    db.close();
+  }
+
+  function hasDashboardRows(data) {
+    return Boolean(
+      data &&
+        Array.isArray(data.stores) &&
+        Array.isArray(data.calls) &&
+        (data.stores.length || data.calls.length)
+    );
+  }
+
+  async function fetchFreshDashboard(fallback) {
+    const [stores, recentCalls] = await Promise.all([
       loadSheetRows(config.storesCsvUrl, mapStores, fallback.stores, "Stores"),
-      loadSheetRows(config.callsCsvUrl, mapCalls, fallback.calls, "Calls"),
+      loadCallRange(CALL_RECENT_RANGE, [], "Recent calls"),
     ]);
+    const calls = mergeCalls(fallback.calls, recentCalls);
 
     enrichCallsWithStores(calls, stores);
-
-    window.DASHBOARD_DATA = {
+    const data = {
       generatedAt: new Date().toISOString(),
       sourceFiles: {
-        stores: config.storesCsvUrl ? "Google Sheets" : fallback.sourceFiles?.stores,
-        calls: config.callsCsvUrl ? "Google Sheets" : fallback.sourceFiles?.calls,
+        stores: config.storesCsvUrl
+          ? "Google Sheets"
+          : fallback.sourceFiles?.stores,
+        calls: config.callsCsvUrl
+          ? "Google Sheets"
+          : fallback.sourceFiles?.calls,
       },
       stores,
       calls,
+      historyComplete: Boolean(fallback.historyComplete),
     };
-    return window.DASHBOARD_DATA;
+    if (hasDashboardRows(data)) await writeDashboardCache(data);
+    return data;
+  }
+
+  window.loadDashboardData = async function loadDashboardData() {
+    const fallback = window.DASHBOARD_DATA || { stores: [], calls: [] };
+    if (!config.enabled || (!config.storesCsvUrl && !config.callsCsvUrl))
+      return fallback;
+
+    const cached = await readDashboardCache();
+    const immediate = hasDashboardRows(cached) ? cached : fallback;
+    window.DASHBOARD_DATA = immediate;
+    window.DASHBOARD_REFRESH_PROMISE = fetchFreshDashboard(immediate)
+      .then((fresh) => {
+        window.DASHBOARD_DATA = fresh;
+        return fresh;
+      })
+      .catch((error) => {
+        console.warn("Dashboard background refresh failed.", error);
+        return immediate;
+      });
+
+    return immediate;
+  };
+
+  window.loadDashboardHistory = function loadDashboardHistory() {
+    if (window.DASHBOARD_DATA?.historyComplete) {
+      return Promise.resolve(window.DASHBOARD_DATA);
+    }
+    if (window.DASHBOARD_HISTORY_PROMISE) return window.DASHBOARD_HISTORY_PROMISE;
+
+    window.DASHBOARD_HISTORY_PROMISE = (async () => {
+      let calls = window.DASHBOARD_DATA?.calls || [];
+      for (const range of CALL_HISTORY_RANGES) {
+        const chunk = await loadCallRange(range, [], `Call history ${range}`);
+        calls = mergeCalls(calls, chunk);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      const stores = window.DASHBOARD_DATA?.stores || [];
+      enrichCallsWithStores(calls, stores);
+      const data = {
+        ...(window.DASHBOARD_DATA || {}),
+        generatedAt: new Date().toISOString(),
+        stores,
+        calls,
+        historyComplete: true,
+      };
+      window.DASHBOARD_DATA = data;
+      await writeDashboardCache(data);
+      return data;
+    })().finally(() => {
+      window.DASHBOARD_HISTORY_PROMISE = null;
+    });
+    return window.DASHBOARD_HISTORY_PROMISE;
   };
 })();
