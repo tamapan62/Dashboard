@@ -804,6 +804,56 @@
         text-align: center;
       }
 
+      .selection-reset-bar {
+        display: flex;
+        justify-content: flex-end;
+        max-height: 0;
+        margin: 0;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
+        transform: translateY(-6px);
+        transition: max-height 0.2s ease, margin 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+      }
+
+      .selection-reset-bar.visible {
+        max-height: 52px;
+        margin: 10px 0 2px;
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+      }
+
+      .selection-reset-button {
+        min-width: 190px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 0 16px;
+        border: 1px solid #777;
+        border-radius: 4px;
+        background: #fff;
+        color: #222;
+        box-shadow: 0 2px 7px rgba(0, 0, 0, 0.14);
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .selection-reset-button:hover {
+        background: #f0f0f0;
+        border-color: #222;
+      }
+
+      .selection-reset-icon {
+        font-size: 23px;
+        font-weight: 400;
+        line-height: 1;
+      }
+
       .filter-option {
         display: grid;
         grid-template-columns: 34px 1fr 64px;
@@ -1304,12 +1354,12 @@
       .daily-page {
         padding: 18px 12px 0 14px;
         display: grid;
-        grid-template-columns: minmax(560px, 740px) 190px 190px minmax(0, 1fr);
+        grid-template-columns: minmax(420px, 0.9fr) minmax(600px, 1.45fr) 166px 166px;
         grid-template-areas:
           "chart chart chart chart"
           "callchart callchart callchart callchart"
-          "table total ratio .";
-        column-gap: 24px;
+          "table store total ratio";
+        column-gap: 16px;
         row-gap: 16px;
         align-items: start;
       }
@@ -1593,8 +1643,75 @@
         grid-area: table;
         margin-top: 0;
         width: 100%;
-        max-height: 250px;
-        overflow: auto;
+        max-height: 410px;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .daily-store-card {
+        grid-area: store;
+        width: 100%;
+        min-width: 0;
+        max-height: none;
+        overflow: visible;
+        background: #fff;
+      }
+
+      .daily-store-table {
+        width: 100%;
+        min-width: 0;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 14px;
+      }
+
+      .daily-store-table th,
+      .daily-store-table td {
+        height: 34px;
+        padding: 6px 9px;
+        border-bottom: 1px solid #e1e1e1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .daily-store-table td:nth-child(3) {
+        height: auto;
+        min-height: 34px;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        line-height: 1.3;
+      }
+
+      .daily-store-table th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #d9d9d9;
+        font-weight: 800;
+      }
+
+      .daily-store-table tbody tr {
+        cursor: pointer;
+        transition: opacity 0.15s ease, font-weight 0.15s ease;
+      }
+
+      .daily-store-table.has-selection tbody tr:not(.selected-row) {
+        opacity: 0.38;
+      }
+
+      .daily-store-table.has-selection tbody tr.selected-row {
+        background: #f3f3f3;
+        opacity: 1;
+        font-weight: 800;
+      }
+
+      .daily-store-card .focus-small-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        background: #fff;
       }
 
       .daily-detail-section {
@@ -1626,7 +1743,7 @@
 
       .daily-table {
         width: 100%;
-        min-width: 650px;
+        min-width: 420px;
         border-collapse: collapse;
         table-layout: fixed;
         font-size: 16px;
@@ -1646,14 +1763,27 @@
         font-weight: 800;
       }
 
+      @media (max-width: 1500px) and (min-width: 1101px) {
+        .daily-page {
+          grid-template-columns: minmax(560px, 1fr) 190px 190px;
+          grid-template-areas:
+            "chart chart chart"
+            "callchart callchart callchart"
+            "table table table"
+            "store store store"
+            "total ratio .";
+        }
+      }
+
       @media (max-width: 1100px) {
         .daily-page {
           grid-template-columns: 1fr 1fr;
           grid-template-areas:
             "chart chart"
             "callchart callchart"
-            "total ratio"
-            "table table";
+            "table table"
+            "store store"
+            "total ratio";
         }
 
         .daily-bottom {
@@ -1873,11 +2003,21 @@
       }
 
       .focus-small {
-        overflow: hidden;
+        position: relative;
+        max-height: 286px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
       }
 
       .focus-small table {
         min-width: 250px;
+      }
+
+      .focus-small th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
       }
 
       .focus-small-footer {
@@ -1888,6 +2028,14 @@
         gap: 18px;
         color: #555;
         font-size: 14px;
+      }
+
+      .focus-small .focus-small-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+        background: #fff;
+        padding-right: 6px;
       }
 
       .pager-btn {
@@ -2110,6 +2258,13 @@
           <div id="regionFilter" class="filter-dd" data-filter="region"></div>
         </div>
 
+        <div id="selectionResetBar" class="selection-reset-bar" aria-hidden="true">
+          <button id="selectionResetButton" class="selection-reset-button" type="button">
+            <span class="selection-reset-icon" aria-hidden="true">↶</span>
+            <span>รีเซ็ตตัวเลือกทั้งหมด</span>
+          </button>
+        </div>
+
         <div id="dailyPage" class="page-section active">
           <section class="daily-page">
             <div class="daily-top">
@@ -2134,6 +2289,10 @@
             </div>
             <div class="daily-table-card">
               <table id="dailyDeptTable" class="daily-table"></table>
+            </div>
+            <div class="daily-store-card">
+              <table id="dailyStoreTable" class="daily-store-table"></table>
+              <div class="focus-small-footer" id="dailyStoreFooter"></div>
             </div>
             <section class="daily-detail-section" aria-label="รายละเอียด Call">
               <div class="daily-detail-heading">รายละเอียด Call</div>
@@ -2314,7 +2473,15 @@
       let activePage = "daily";
       let activeMonth = monthOrder[0] || "Jul 26";
       let selectedDailyDateKey = "";
+      let dailyStorePage = 0;
       let dailyTicketPage = 0;
+      const dailyDetailState = {
+        product: new Set(),
+        problem: new Set(),
+        system: new Set(),
+        parts: new Set(),
+        cause: new Set(),
+      };
       const dailyDeptSort = { key: "value", dir: "desc" };
       const dateFilterState = {
         start: null,
@@ -2324,6 +2491,7 @@
         viewStart: null,
         viewEnd: null,
       };
+      const pageFilterSnapshots = new Map();
       const selectedSummaryRows = {};
       let selectedProductRow = "";
       const selectedFocusRows = {};
@@ -2366,6 +2534,43 @@
         });
       }
 
+      function pageSelectionKey(page = activePage, month = activeMonth) {
+        return page === "month" ? `month:${month}` : page;
+      }
+
+      function savePageScopedFilters() {
+        pageFilterSnapshots.set(pageSelectionKey(), {
+          filters: Object.fromEntries(Object.entries(filterState).map(([key, state]) => [key, [...state]])),
+          dateStart: dateFilterState.start ? new Date(dateFilterState.start) : null,
+          dateEnd: dateFilterState.end ? new Date(dateFilterState.end) : null,
+        });
+      }
+
+      function restorePageScopedFilters(page, month = activeMonth) {
+        const snapshot = pageFilterSnapshots.get(pageSelectionKey(page, month));
+        Object.values(filterState).forEach((state) => state.clear());
+        if (snapshot) {
+          Object.entries(snapshot.filters).forEach(([key, values]) => {
+            values.forEach((value) => filterState[key]?.add(value));
+          });
+        }
+        dateFilterState.start = snapshot?.dateStart ? new Date(snapshot.dateStart) : null;
+        dateFilterState.end = snapshot?.dateEnd ? new Date(snapshot.dateEnd) : null;
+        dateFilterState.draftStart = dateFilterState.start ? new Date(dateFilterState.start) : null;
+        dateFilterState.draftEnd = dateFilterState.end ? new Date(dateFilterState.end) : null;
+        dateFilterState.viewStart = null;
+        dateFilterState.viewEnd = null;
+      }
+
+      function activatePage(page, month = activeMonth) {
+        savePageScopedFilters();
+        activePage = page;
+        activeMonth = month;
+        restorePageScopedFilters(activePage, activeMonth);
+        syncDateFilterButton();
+        syncAllFilterControls();
+      }
+
       function resetFocusPaging() {
         focusTicketPage = 0;
         Object.values(focusRankState).forEach((state) => {
@@ -2380,6 +2585,14 @@
         if (key === "parts") return item.parts || "-";
         if (key === "cause") return item.cause || "-";
         return "-";
+      }
+
+      function dailyDetailFilteredCalls(items, ignoredKey = "") {
+        return items.filter((item) => (
+          Object.entries(dailyDetailState).every(([key, state]) => (
+            key === ignoredKey || !state.size || state.has(focusRankValue(key, item))
+          ))
+        ));
       }
 
       function resetMonthPaging() {
@@ -2444,6 +2657,81 @@
           state.value = "";
           state.page = 0;
         });
+      }
+
+      function hasActiveSelection() {
+        const pageHasSelection =
+          (activePage === "daily" && (
+            selectedDailyDateKey ||
+            Object.values(dailyDetailState).some((state) => state.size)
+          )) ||
+          (activePage === "summary" && Object.values(selectedSummaryRows).some(Boolean)) ||
+          (activePage === "product" && selectedProductRow) ||
+          (activePage === "focus" && (
+            Object.values(selectedFocusRows).some(Boolean) ||
+            Object.values(focusRankState).some((state) => state.value)
+          )) ||
+          (activePage === "month" && Object.values(monthRankState).some((state) => state.value));
+        return Boolean(
+          dateFilterState.start ||
+          dateFilterState.end ||
+          Object.values(filterState).some((state) => state.size) ||
+          pageHasSelection
+        );
+      }
+
+      function syncSelectionResetButton() {
+        const bar = document.getElementById("selectionResetBar");
+        if (!bar) return;
+        const visible = hasActiveSelection();
+        bar.classList.toggle("visible", visible);
+        bar.setAttribute("aria-hidden", String(!visible));
+      }
+
+      function resetAllSelections() {
+        Object.values(filterState).forEach((state) => state.clear());
+        if (activePage === "daily") {
+          selectedDailyDateKey = "";
+          dailyStorePage = 0;
+          dailyTicketPage = 0;
+          Object.values(dailyDetailState).forEach((state) => state.clear());
+        } else if (activePage === "summary") {
+          Object.keys(selectedSummaryRows).forEach((key) => {
+            selectedSummaryRows[key] = "";
+          });
+        } else if (activePage === "product") {
+          selectedProductRow = "";
+        } else if (activePage === "focus") {
+          Object.keys(selectedFocusRows).forEach((key) => {
+            selectedFocusRows[key] = "";
+          });
+          clearFocusRankSelections();
+          resetFocusPaging();
+        } else if (activePage === "month") {
+          clearMonthRankSelections();
+          resetMonthPaging();
+        }
+        dateFilterState.start = null;
+        dateFilterState.end = null;
+        dateFilterState.draftStart = null;
+        dateFilterState.draftEnd = null;
+        dateFilterState.viewStart = null;
+        dateFilterState.viewEnd = null;
+        pageFilterSnapshots.delete(pageSelectionKey());
+        document.querySelectorAll(".filter-dd input[type='search']").forEach((input) => {
+          input.value = "";
+        });
+        document.querySelectorAll(".filter-dd.open").forEach((element) => {
+          element.classList.remove("open");
+        });
+        document.querySelector(".date-filter")?.classList.remove("open");
+        syncDateFilterButton();
+        syncAllFilterControls();
+        render();
+      }
+
+      function setupSelectionReset() {
+        document.getElementById("selectionResetButton")?.addEventListener("click", resetAllSelections);
       }
 
       function monthHintIndex(value) {
@@ -2772,6 +3060,7 @@
           ".daily-chart-card",
           ".daily-call-chart-card",
           ".daily-table-card",
+          ".daily-store-card",
           ".daily-kpi-card",
           ".focus-call-total",
           ".summary-card",
@@ -3170,8 +3459,7 @@
         item.querySelector("select").addEventListener("change", async (event) => {
           if (!event.target.value) return;
           await ensureDashboardHistory();
-          activePage = "month";
-          activeMonth = event.target.value;
+          activatePage("month", event.target.value);
           clearMonthRankSelections();
           resetMonthPaging();
           document.querySelectorAll(".sidebar .nav-item").forEach((el) => el.classList.remove("active"));
@@ -3188,12 +3476,11 @@
             document.querySelectorAll(".sidebar .nav-item").forEach((el) => el.classList.remove("active"));
             item.classList.add("active");
             if (page.startsWith("month-")) {
-              activePage = "month";
-              activeMonth = page.replace("month-", "");
+              activatePage("month", page.replace("month-", ""));
               clearMonthRankSelections();
               resetMonthPaging();
             } else {
-              activePage = page;
+              activatePage(page);
             }
             render();
           });
@@ -3346,6 +3633,7 @@
 
       function applyDailyDateSelection(key) {
         selectedDailyDateKey = selectedDailyDateKey === key ? "" : key;
+        dailyStorePage = 0;
         render();
       }
 
@@ -3503,11 +3791,11 @@
         }
         table.innerHTML = `
           <colgroup>
-            <col style="width:58px" />
+            <col style="width:50px" />
             <col />
-            <col style="width:112px" />
-            <col style="width:112px" />
-            <col style="width:124px" />
+            <col style="width:72px" />
+            <col style="width:72px" />
+            <col style="width:94px" />
           </colgroup>
           <thead>
             <tr>
@@ -3556,11 +3844,11 @@
         };
       }
 
-      function renderDailyRankTable(tableId, footerId, title, items, getter, limit = 5) {
+      function renderDailyRankTable(tableId, footerId, key, title, items, getter, limit = 5) {
         const rows = Object.entries(countByGetter(items, getter))
           .sort((a, b) => b[1].total - a[1].total || String(a[0]).localeCompare(String(b[0]), "th"));
         const total = rows.reduce((sum, [, data]) => sum + data.total, 0) || 1;
-        const shown = rows.slice(0, limit);
+        const shown = rows;
         const table = document.getElementById(tableId);
         const footer = document.getElementById(footerId);
         setExportRows(table, tableId, [
@@ -3577,7 +3865,7 @@
           <thead><tr><th></th><th class="left">${escapeHtml(title)}</th><th>Call</th><th>%</th></tr></thead>
           <tbody>
             ${shown.length ? shown.map(([name, data], index) => `
-              <tr>
+              <tr class="${dailyDetailState[key].has(name) ? "selected-row" : ""}" data-value="${escapeHtml(name)}">
                 <td>${index + 1}.</td>
                 <td class="left" title="${escapeHtml(name)}">${escapeHtml(name)}</td>
                 <td>${fmt(data.total)}</td>
@@ -3586,7 +3874,111 @@
             `).join("") : `<tr><td colspan="4" class="empty-note">ไม่พบข้อมูล</td></tr>`}
           </tbody>
         `;
-        footer.innerHTML = `<span>${rows.length ? `1 - ${shown.length}` : "0"} / ${rows.length}</span>`;
+        table.classList.toggle("has-selection", Boolean(dailyDetailState[key].size));
+        table.onclick = (event) => {
+          if (event.target.closest(".export-btn, .export-menu")) return;
+          const row = event.target.closest("tbody tr[data-value]");
+          if (!row) return;
+          event.preventDefault();
+          const value = row.dataset.value;
+          const state = dailyDetailState[key];
+          const isSame = state.size === 1 && state.has(value);
+          state.clear();
+          if (!isSame) state.add(value);
+          dailyTicketPage = 0;
+          render();
+        };
+        footer.innerHTML = `<span>${rows.length ? `1 - ${rows.length}` : "0"} / ${rows.length}</span>`;
+      }
+
+      function renderDailyStoreTable(items) {
+        const grouped = new Map();
+        items.forEach((item) => {
+          const storeCode = item.storeCode || "-";
+          if (!grouped.has(storeCode)) {
+            grouped.set(storeCode, {
+              storeCode,
+              storeName: item.storeName || "-",
+              team: item.team || "-",
+              calls: 0,
+            });
+          }
+          grouped.get(storeCode).calls += 1;
+        });
+
+        const rows = [...grouped.values()]
+          .sort((a, b) => b.calls - a.calls || String(a.storeCode).localeCompare(String(b.storeCode)));
+        const pageSize = 10;
+        const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+        if (dailyStorePage >= pageCount) dailyStorePage = pageCount - 1;
+        const start = dailyStorePage * pageSize;
+        const shown = rows.slice(start, start + pageSize);
+        const table = document.getElementById("dailyStoreTable");
+
+        setExportRows(table, "daily-store-ranking-all", [
+          ["No.", "Store Code", "Store Name", "Team", "Call"],
+          ...rows.map((row, index) => [index + 1, row.storeCode, row.storeName, row.team, row.calls]),
+        ]);
+        table.innerHTML = `
+          <colgroup>
+            <col style="width:42px" />
+            <col style="width:110px" />
+            <col />
+            <col style="width:110px" />
+            <col style="width:70px" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th></th>
+              <th class="text-left">Store Code</th>
+              <th class="text-left">Store Name</th>
+              <th class="text-left">Team</th>
+              <th>Call</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${shown.length ? shown.map((row, index) => `
+              <tr class="${filterState.storeCode.has(row.storeCode) || filterState.team.has(row.team) ? "selected-row" : ""}"
+                data-store-code="${escapeHtml(row.storeCode)}"
+                data-team="${escapeHtml(row.team)}">
+                <td>${start + index + 1}.</td>
+                <td class="text-left" data-field="storeCode">${escapeHtml(row.storeCode)}</td>
+                <td class="text-left" data-field="storeCode" title="${escapeHtml(row.storeName)}">${escapeHtml(row.storeName)}</td>
+                <td class="text-left" data-field="team">${escapeHtml(row.team)}</td>
+                <td>${fmt(row.calls)}</td>
+              </tr>
+            `).join("") : `<tr><td colspan="5" class="empty-note">ไม่พบข้อมูลสาขา</td></tr>`}
+          </tbody>
+        `;
+        table.classList.toggle("has-selection", Boolean(filterState.storeCode.size || filterState.team.size));
+        table.onclick = (event) => {
+          if (event.target.closest(".export-btn, .export-menu")) return;
+          const row = event.target.closest("tbody tr[data-store-code]");
+          if (!row) return;
+          const field = event.target.closest("td")?.dataset.field || "storeCode";
+          const value = row.dataset[field];
+          const state = filterState[field];
+          const isSame = state.size === 1 && state.has(value);
+          state.clear();
+          if (!isSame) state.add(value);
+          dailyStorePage = 0;
+          syncAllFilterControls();
+          render();
+        };
+
+        const from = rows.length ? start + 1 : 0;
+        renderPager(
+          "dailyStoreFooter",
+          from,
+          start + shown.length,
+          rows.length,
+          dailyStorePage,
+          pageCount,
+          (page) => {
+            dailyStorePage = page;
+            render();
+          }
+        );
       }
 
       function renderDailyTicketTable(items) {
@@ -3667,12 +4059,12 @@
       }
 
       function renderDailyDetail(items) {
-        renderDailyRankTable("dailyProductRankTable", "dailyProductRankFooter", "CI_Product Type", items, (item) => item.product || "-", 5);
-        renderDailyRankTable("dailyProblemRankTable", "dailyProblemRankFooter", "Problem Type", items, (item) => item.problem || "-", 5);
-        renderDailyRankTable("dailySystemRankTable", "dailySystemRankFooter", "System", items, (item) => item.system || "-", 5);
-        renderDailyRankTable("dailyPartsRankTable", "dailyPartsRankFooter", "Damaged Parts", items, (item) => item.parts || "-", 5);
-        renderDailyRankTable("dailyCauseRankTable", "dailyCauseRankFooter", "Cause สาเหตุ", items, (item) => item.cause || "-", 5);
-        renderDailyTicketTable(items);
+        renderDailyRankTable("dailyProductRankTable", "dailyProductRankFooter", "product", "CI_Product Type", dailyDetailFilteredCalls(items, "product"), (item) => item.product || "-", 5);
+        renderDailyRankTable("dailyProblemRankTable", "dailyProblemRankFooter", "problem", "Problem Type", dailyDetailFilteredCalls(items, "problem"), (item) => item.problem || "-", 5);
+        renderDailyRankTable("dailySystemRankTable", "dailySystemRankFooter", "system", "System", dailyDetailFilteredCalls(items, "system"), (item) => item.system || "-", 5);
+        renderDailyRankTable("dailyPartsRankTable", "dailyPartsRankFooter", "parts", "Damaged Parts", dailyDetailFilteredCalls(items, "parts"), (item) => item.parts || "-", 5);
+        renderDailyRankTable("dailyCauseRankTable", "dailyCauseRankFooter", "cause", "Cause สาเหตุ", dailyDetailFilteredCalls(items, "cause"), (item) => item.cause || "-", 5);
+        renderDailyTicketTable(dailyDetailFilteredCalls(items));
       }
 
       function renderDailyPage() {
@@ -3681,7 +4073,8 @@
         const days = dateRangeDays(range.start, range.end);
         const visibleDayKeys = new Set(days.map((day) => dateKey(day)));
         if (selectedDailyDateKey && !visibleDayKeys.has(selectedDailyDateKey)) selectedDailyDateKey = "";
-        const periodCalls = dailyCallsForRange();
+        const detailBasePeriodCalls = dailyCallsForRange();
+        const periodCalls = dailyDetailFilteredCalls(detailBasePeriodCalls);
         const periodStores = filteredStores();
         const storeCount = periodStores.length || 1;
         const storeCountByDept = groupStoreCounts(periodStores, "dept");
@@ -3715,6 +4108,9 @@
         const tableCalls = selectedDailyDateKey
           ? periodCalls.filter((item) => dateKey(parseDataDate(item.date, item.month)) === selectedDailyDateKey)
           : periodCalls;
+        const detailBaseTableCalls = selectedDailyDateKey
+          ? detailBasePeriodCalls.filter((item) => dateKey(parseDataDate(item.date, item.month)) === selectedDailyDateKey)
+          : detailBasePeriodCalls;
         document.getElementById("dailyTotalCall").textContent = fmt(tableCalls.length);
         document.getElementById("dailyCallPerStore").textContent = ratio(storeCount, tableCalls.length).toFixed(3);
         const selectedDailyDate = selectedDailyDateKey
@@ -3725,7 +4121,8 @@
           document.getElementById("dailyNote").textContent = `เลือกวันที่ ${formatReportDate(selectedDailyDate)} ตารางด้านล่างแสดง Call ทั้งหมดของวันนั้น`;
         }
         renderDailyDeptTable(periodCalls, tableCalls, storeCountByDept);
-        renderDailyDetail(tableCalls);
+        renderDailyStoreTable(tableCalls);
+        renderDailyDetail(detailBaseTableCalls);
       }
 
       function buildSummaryRows(groupKey, limit) {
@@ -4288,10 +4685,9 @@
           .sort((a, b) => b[1].total - a[1].total);
         const total = rows.reduce((sum, [, data]) => sum + data.total, 0) || 1;
         const state = focusRankState[rankKey];
-        const pageCount = Math.max(1, Math.ceil(rows.length / limit));
-        if (state.page >= pageCount) state.page = pageCount - 1;
-        const start = state.page * limit;
-        const shown = rows.slice(start, start + limit);
+        state.page = 0;
+        const start = 0;
+        const shown = rows;
         const table = document.getElementById(tableId);
         setExportRows(table, tableId, [
           [title, "Call", "%"],
@@ -4325,19 +4721,9 @@
           applyFocusRankSelection(rankKey, row.dataset.rankValue);
         };
 
-        const from = rows.length ? start + 1 : 0;
-        const to = start + shown.length;
         const footer = document.getElementById(footerId);
-        footer.innerHTML = `
-          <span>${from} - ${to} / ${rows.length}</span>
-          <button type="button" class="pager-btn" data-dir="-1" ${state.page <= 0 ? "disabled" : ""}>‹</button>
-          <button type="button" class="pager-btn" data-dir="1" ${state.page >= pageCount - 1 ? "disabled" : ""}>›</button>
-        `;
-        footer.onclick = (event) => {
-          const button = event.target.closest("button[data-dir]");
-          if (!button || button.disabled) return;
-          setFocusRankPage(rankKey, state.page + Number(button.dataset.dir));
-        };
+        footer.innerHTML = `<span>${rows.length ? `1 - ${rows.length}` : "0"} / ${rows.length}</span>`;
+        footer.onclick = null;
       }
 
       function renderFocusTickets(items) {
@@ -4657,10 +5043,9 @@
         const rows = Object.entries(countByGetter(items, getter)).sort((a, b) => b[1].total - a[1].total);
         const total = rows.reduce((sum, [, data]) => sum + data.total, 0) || 1;
         const state = monthRankState[rankKey];
-        const pageCount = Math.max(1, Math.ceil(rows.length / limit));
-        if (state.page >= pageCount) state.page = pageCount - 1;
-        const start = state.page * limit;
-        const shown = rows.slice(start, start + limit);
+        state.page = 0;
+        const start = 0;
+        const shown = rows;
         const table = document.getElementById(tableId);
         setExportRows(table, tableId, [
           [title, "Call", "%"],
@@ -4691,8 +5076,9 @@
           if (!row) return;
           applyMonthRankSelection(rankKey, row.dataset.rankValue);
         };
-        const from = rows.length ? start + 1 : 0;
-        renderPager(footerId, from, start + shown.length, rows.length, state.page, pageCount, (page) => setMonthRankPage(rankKey, page));
+        const footer = document.getElementById(footerId);
+        footer.innerHTML = `<span>${rows.length ? `1 - ${rows.length}` : "0"} / ${rows.length}</span>`;
+        footer.onclick = null;
       }
 
       function renderMonthTicketTable(items) {
@@ -4914,12 +5300,14 @@
         } else if (activePage === "month") {
           renderMonthPage();
         }
+        syncSelectionResetButton();
         ensureExportControls();
       }
 
       renderReportDateRange();
       setupFilters();
       setupDateFilter();
+      setupSelectionReset();
       renderMonthNavigation();
       setupNavigation();
       render();
