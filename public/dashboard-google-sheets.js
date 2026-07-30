@@ -15,7 +15,7 @@
   };
   const CACHE_DB_NAME = "stat-cpr-dashboard-cache";
   const CACHE_STORE_NAME = "dashboard-data";
-  const CACHE_KEY = ["v6-july-age-equipment", config.storesCsvUrl, config.callsCsvUrl].join("|");
+  const CACHE_KEY = ["v7-all-months-age-equipment", config.storesCsvUrl, config.callsCsvUrl].join("|");
   const CALL_HEADER_RANGE = "A1:Q1";
   const CALL_RECENT_RANGE = "A53780:Q70509";
   const CALL_HISTORY_RANGES = [
@@ -574,7 +574,15 @@
       return fallback;
 
     const cached = await readDashboardCache();
-    const immediate = hasDashboardRows(cached) ? cached : fallback;
+    const immediate = hasDashboardRows(cached)
+      ? {
+          ...fallback,
+          ...cached,
+          stores: cached.stores?.length ? cached.stores : fallback.stores,
+          calls: mergeCalls(fallback.calls, cached.calls),
+          historyComplete: Boolean(cached.historyComplete || fallback.historyComplete),
+        }
+      : fallback;
     window.DASHBOARD_DATA = immediate;
     window.DASHBOARD_REFRESH_PROMISE = fetchFreshDashboard(immediate)
       .then((fresh) => {

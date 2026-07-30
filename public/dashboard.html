@@ -2406,9 +2406,9 @@
 
     <div class="footer-brand">Data Studio</div>
 
-    <script src="./dashboard-data.js?v=20260730-ageq2"></script>
+    <script src="./dashboard-data.js?v=20260730-months1"></script>
     <script src="./google-sheets-config.js?v=20260720-speed1"></script>
-    <script src="./dashboard-google-sheets.js?v=20260730-ageq2"></script>
+    <script src="./dashboard-google-sheets.js?v=20260730-months1"></script>
     <script>
       (async function () {
       const raw = window.loadDashboardData ? await window.loadDashboardData() : (window.DASHBOARD_DATA || { stores: [], calls: [] });
@@ -2902,10 +2902,11 @@
       }
 
       function buildMonthOrder(items) {
-        const months = [...new Set(items.map((item) => callMonthKey(item)).filter(Boolean))]
+        const detectedMonths = items.map((item) => callMonthKey(item)).filter(Boolean);
+        const months = [...new Set([...defaultMonthOrder, ...detectedMonths])]
           .filter((month) => monthSortValue(month) > 0)
           .sort((a, b) => monthSortValue(b) - monthSortValue(a));
-        return months.length ? months : defaultMonthOrder;
+        return months;
       }
 
       function buildLatestYearMonthOrder(months) {
