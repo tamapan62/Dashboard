@@ -15,15 +15,16 @@
   };
   const CACHE_DB_NAME = "stat-cpr-dashboard-cache";
   const CACHE_STORE_NAME = "dashboard-data";
-  const CACHE_KEY = [config.storesCsvUrl, config.callsCsvUrl].join("|");
-  const CALL_HEADER_RANGE = "A1:P1";
-  const CALL_RECENT_RANGE = "A100001:P200000";
+  const CACHE_KEY = ["v6-july-age-equipment", config.storesCsvUrl, config.callsCsvUrl].join("|");
+  const CALL_HEADER_RANGE = "A1:Q1";
+  const CALL_RECENT_RANGE = "A53780:Q70509";
   const CALL_HISTORY_RANGES = [
-    "A1:P20000",
-    "A20001:P40000",
-    "A40001:P60000",
-    "A60001:P80000",
-    "A80001:P100000",
+    "A1:Q20000",
+    "A20001:Q40000",
+    "A40001:Q60000",
+    "A60001:Q80000",
+    "A80001:Q100000",
+    "A100001:Q130000",
   ];
 
   const MONTHS = [
@@ -107,6 +108,7 @@
     team: ["team", "ทีม"],
     callType: ["call type", "call...", "call", "ประเภท call"],
     equipment: ["equipment", "item", "ci", "อุปกรณ์"],
+    ageEquipment: ["age_equipment"],
     problem: ["problem type", "problem", "อาการ", "ปัญหา"],
     system: ["system", "ระบบ"],
     parts: ["damaged parts", "damaged parts (...", "parts", "ชิ้นส่วน"],
@@ -377,6 +379,7 @@
     const calls = rows
       .map((sourceRow) => {
         const item = mapRow(sourceRow, callAliases);
+        item.columnQ = cleanText(sourceRow.age_equipment ?? item.ageEquipment);
         const parsedDate = parseDateValue(item.date, item.month);
         if (parsedDate) {
           item.date = `${parsedDate.getFullYear()}-${String(
@@ -429,7 +432,7 @@
   async function loadCallRange(range, fallbackRows = [], label = "Calls") {
     try {
       const rangeText = await fetchCsv(sheetRangeUrl(config.callsCsvUrl, range));
-      const hasHeader = range === "A1:P20000";
+      const hasHeader = range === "A1:Q20000";
       const csvText = hasHeader
         ? rangeText
         : `${(await fetchCsv(sheetRangeUrl(config.callsCsvUrl, CALL_HEADER_RANGE))).trimEnd()}\n${rangeText}`;
