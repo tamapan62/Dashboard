@@ -2073,7 +2073,7 @@
       }
 
       .focus-detail table {
-        min-width: 1780px;
+        min-width: 2180px;
       }
 
       .focus-title-mark {
@@ -3005,7 +3005,7 @@
 
       function ticketRowsForExport(items) {
         return [
-          ["Ticket Number", "Store Code", "Store Name", "Create Date", "Team", "Call", "CI", "Problem Type", "System", "Damaged Parts", "Cause"],
+          ["Ticket Number", "Store Code", "Store Name", "Create Date", "Team", "Call", "CI", "Equipment Age", "Problem Type", "System", "Damaged Parts", "Cause"],
           ...items.map((item, index) => [
             item.ticket || "-",
             item.storeCode || "-",
@@ -3014,6 +3014,7 @@
             item.team || "-",
             index + 1,
             item.equipment || "-",
+            equipmentAgeText(item),
             item.problem || "-",
             item.system || "-",
             item.parts || "-",
@@ -3614,6 +3615,11 @@
         return String(item.status || item.closeStatus || item.jobStatus || item["สถานะ"] || item["สถานะงาน"] || item["สถานะปิดงาน"] || "").trim();
       }
 
+      function equipmentAgeText(item) {
+        const value = String(item.ageEquipment ?? item.age_equipment ?? "").trim();
+        return value || "ไม่พบข้อมูล";
+      }
+
       function hasStatusData(items) {
         return items.some((item) => callStatusText(item));
       }
@@ -3990,8 +3996,8 @@
         const rows = allRows.slice(start, start + pageSize);
         const table = document.getElementById("dailyTicketTable");
         setExportRows(table, "daily-ticket-all", [
-          ["Ticket Number", "Store Code", "Store Name", "Create Date", "Team", "Call", "CI", "Problem Type", "System", "Damaged Parts", "Cause", "Status"],
-          ...allRows.map((item, index) => [item.ticket || "-", item.storeCode || "-", item.storeName || "-", item.date || "-", item.team || "-", index + 1, item.equipment || "-", item.problem || "-", item.system || "-", item.parts || "-", item.cause || "-", callStatusText(item) || "ไม่ระบุ"]),
+          ["Ticket Number", "Store Code", "Store Name", "Create Date", "Team", "Call", "CI", "Equipment Age", "Problem Type", "System", "Damaged Parts", "Cause", "Status"],
+          ...allRows.map((item, index) => [item.ticket || "-", item.storeCode || "-", item.storeName || "-", item.date || "-", item.team || "-", index + 1, item.equipment || "-", equipmentAgeText(item), item.problem || "-", item.system || "-", item.parts || "-", item.cause || "-", callStatusText(item) || "ไม่ระบุ"]),
         ]);
         table.innerHTML = `
           <colgroup>
@@ -4002,6 +4008,7 @@
             <col style="width:90px" />
             <col style="width:65px" />
             <col style="width:250px" />
+            <col style="width:120px" />
             <col style="width:180px" />
             <col style="width:190px" />
             <col style="width:230px" />
@@ -4017,6 +4024,7 @@
               <th class="left">Team</th>
               <th>Call</th>
               <th class="left">CI</th>
+              <th class="left">อายุอุปกรณ์</th>
               <th class="left">Problem Type</th>
               <th class="left">System</th>
               <th class="left">Damaged Parts</th>
@@ -4034,13 +4042,14 @@
                 <td class="left">${escapeHtml(item.team || "-")}</td>
                 <td>${start + index + 1}</td>
                 <td class="left" title="${escapeHtml(item.equipment || "-")}">${escapeHtml(item.equipment || "-")}</td>
+                <td class="left">${escapeHtml(equipmentAgeText(item))}</td>
                 <td class="left" title="${escapeHtml(item.problem || "-")}">${escapeHtml(item.problem || "-")}</td>
                 <td class="left" title="${escapeHtml(item.system || "-")}">${escapeHtml(item.system || "-")}</td>
                 <td class="left" title="${escapeHtml(item.parts || "-")}">${escapeHtml(item.parts || "-")}</td>
                 <td class="left" title="${escapeHtml(item.cause || "-")}">${escapeHtml(item.cause || "-")}</td>
                 <td class="left">${escapeHtml(callStatusText(item) || "ไม่ระบุ")}</td>
               </tr>
-            `).join("") : `<tr><td colspan="12" class="empty-note">ไม่พบรายละเอียด Call ตามตัวกรอง</td></tr>`}
+            `).join("") : `<tr><td colspan="13" class="empty-note">ไม่พบรายละเอียด Call ตามตัวกรอง</td></tr>`}
           </tbody>
         `;
         const from = allRows.length ? start + 1 : 0;
@@ -4764,6 +4773,7 @@
             <col style="width:85px" />
             <col style="width:60px" />
             <col style="width:230px" />
+            <col style="width:120px" />
             <col style="width:160px" />
             <col style="width:190px" />
             <col style="width:260px" />
@@ -4778,6 +4788,7 @@
               <th class="left">Team</th>
               <th>Call ...</th>
               <th class="left">CI</th>
+              <th class="left">อายุอุปกรณ์</th>
               <th class="left">Problem Type</th>
               <th class="left">System</th>
               <th class="left">Damaged Parts</th>
@@ -4801,6 +4812,7 @@
                 <td class="left" data-ticket-filter="team">${escapeHtml(item.team || "-")}</td>
                 <td>${start + index + 1}</td>
                 <td class="left" data-ticket-filter="item" title="${escapeHtml(item.equipment || "-")}">${escapeHtml(item.equipment || "-")}</td>
+                <td class="left">${escapeHtml(equipmentAgeText(item))}</td>
                 <td class="left" data-ticket-filter="problem" title="${escapeHtml(item.problem || "-")}">${escapeHtml(item.problem || "-")}</td>
                 <td class="left" data-ticket-filter="system" title="${escapeHtml(item.system || "-")}">${escapeHtml(item.system || "-")}</td>
                 <td class="left" data-ticket-filter="parts" title="${escapeHtml(item.parts || "-")}">${escapeHtml(item.parts || "-")}</td>
@@ -5119,6 +5131,7 @@
             <col style="width:80px" />
             <col style="width:70px" />
             <col style="width:250px" />
+            <col style="width:120px" />
             <col style="width:180px" />
             <col style="width:190px" />
             <col style="width:230px" />
@@ -5133,6 +5146,7 @@
               <th class="left">Team</th>
               <th>Call...</th>
               <th class="left">CI</th>
+              <th class="left">อายุอุปกรณ์</th>
               <th class="left">Problem Type</th>
               <th class="left">System</th>
               <th class="left">Damaged Parts (...</th>
@@ -5156,6 +5170,7 @@
                 <td class="left" data-ticket-filter="team">${escapeHtml(item.team || "-")}</td>
                 <td>${start + index + 1}</td>
                 <td class="left" data-ticket-filter="item" title="${escapeHtml(item.equipment || "-")}">${escapeHtml(item.equipment || "-")}</td>
+                <td class="left">${escapeHtml(equipmentAgeText(item))}</td>
                 <td class="left" data-ticket-filter="problem" title="${escapeHtml(item.problem || "-")}">${escapeHtml(item.problem || "-")}</td>
                 <td class="left" data-ticket-filter="system" title="${escapeHtml(item.system || "-")}">${escapeHtml(item.system || "-")}</td>
                 <td class="left" data-ticket-filter="parts" title="${escapeHtml(item.parts || "-")}">${escapeHtml(item.parts || "-")}</td>
