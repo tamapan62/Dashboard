@@ -2383,9 +2383,9 @@
 
     <div class="footer-brand">Data Studio</div>
 
-    <script src="./dashboard-data.js?v=20260731-time1"></script>
+    <script src="./dashboard-data.js?v=20260731-monthload1"></script>
     <script src="./google-sheets-config.js?v=20260720-speed1"></script>
-    <script src="./dashboard-google-sheets.js?v=20260731-time1"></script>
+    <script src="./dashboard-google-sheets.js?v=20260731-monthload1"></script>
     <script>
       (async function () {
       const raw = window.loadDashboardData ? await window.loadDashboardData() : (window.DASHBOARD_DATA || { stores: [], calls: [] });
@@ -3422,6 +3422,19 @@
         }
       }
 
+      async function ensureDashboardMonth(month) {
+        if (!window.loadDashboardMonth) {
+          await ensureDashboardHistory();
+          return;
+        }
+        showDashboardLoading(`กำลังโหลดข้อมูล ${sidebarMonthLabel(month)}...`);
+        try {
+          applyDashboardData(await window.loadDashboardMonth(month));
+        } finally {
+          document.getElementById("dashboardLoading")?.remove();
+        }
+      }
+
       function renderMonthNavigation() {
         const focusItem = document.querySelector('.nav-item[data-page="focus"]');
         if (!focusItem) return;
@@ -3437,8 +3450,9 @@
         focusItem.after(item);
         item.querySelector("select").addEventListener("change", async (event) => {
           if (!event.target.value) return;
-          await ensureDashboardHistory();
-          activatePage("month", event.target.value);
+          const selectedMonth = event.target.value;
+          await ensureDashboardMonth(selectedMonth);
+          activatePage("month", selectedMonth);
           clearMonthRankSelections();
           resetMonthPaging();
           document.querySelectorAll(".sidebar .nav-item").forEach((el) => el.classList.remove("active"));
@@ -3451,7 +3465,11 @@
         document.querySelectorAll(".nav-item[data-page]").forEach((item) => {
           item.addEventListener("click", async () => {
             const page = item.dataset.page;
-            if (page !== "daily") await ensureDashboardHistory();
+            if (page.startsWith("month-")) {
+              await ensureDashboardMonth(page.replace("month-", ""));
+            } else if (page !== "daily") {
+              await ensureDashboardHistory();
+            }
             document.querySelectorAll(".sidebar .nav-item").forEach((el) => el.classList.remove("active"));
             item.classList.add("active");
             if (page.startsWith("month-")) {

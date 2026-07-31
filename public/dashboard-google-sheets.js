@@ -15,7 +15,7 @@
   };
   const CACHE_DB_NAME = "stat-cpr-dashboard-cache";
   const CACHE_STORE_NAME = "dashboard-data";
-  const CACHE_KEY = ["v9-create-date-time", config.storesCsvUrl, config.callsCsvUrl].join("|");
+  const CACHE_KEY = ["v10-month-on-demand", config.storesCsvUrl, config.callsCsvUrl].join("|");
   const CALL_HEADER_RANGE = "A1:Q1";
   const CALL_MONTH_INDEX_RANGE = "E1:E200000";
   const CALL_RECENT_FALLBACK_RANGE = "A100000:Q200000";
@@ -458,32 +458,61 @@
     return year * 12 + monthIndex;
   }
 
-  async function detectLatestCallRange() {
-    try {
+  function monthKeyFromText(value) {
+    const monthIndex = monthHintIndex(value);
+    const yearMatch = cleanText(value).match(/(?:19|20)?\d{2}/g);
+    if (monthIndex == null || !yearMatch?.length) return "";
+    let year = Number(yearMatch[yearMatch.length - 1]);
+    if (year < 100) year += 2000;
+    if (year > 2400) year -= 543;
+    return `${MONTHS[monthIndex]} ${String(year).slice(-2)}`;
+  }
+
+  let callMonthRangesPromise = null;
+
+  function detectCallMonthRanges() {
+    if (callMonthRangesPromise) return callMonthRangesPromise;
+    callMonthRangesPromise = (async () => {
       const monthCsv = await fetchCsv(
         sheetRangeUrl(config.callsCsvUrl, CALL_MONTH_INDEX_RANGE)
       );
       const rows = parseCsv(monthCsv);
-      let latestMonth = -Infinity;
-      let firstRow = 0;
-      let lastRow = 0;
+      const ranges = new Map();
 
       rows.forEach((row, index) => {
-        const sortValue = monthSortValue(row[0]);
-        if (!Number.isFinite(sortValue)) return;
+        const monthKey = monthKeyFromText(row[0]);
+        if (!monthKey) return;
         const sheetRow = index + 1;
-        if (sortValue > latestMonth) {
-          latestMonth = sortValue;
-          firstRow = sheetRow;
-          lastRow = sheetRow;
-        } else if (sortValue === latestMonth) {
-          firstRow = firstRow || sheetRow;
-          lastRow = sheetRow;
-        }
+        const current = ranges.get(monthKey) || {
+          firstRow: sheetRow,
+          lastRow: sheetRow,
+        };
+        current.firstRow = Math.min(current.firstRow, sheetRow);
+        current.lastRow = Math.max(current.lastRow, sheetRow);
+        ranges.set(monthKey, current);
       });
 
-      if (firstRow && lastRow >= firstRow) {
-        const range = `A${firstRow}:Q${lastRow}`;
+      return new Map(
+        [...ranges.entries()].map(([monthKey, range]) => [
+          monthKey,
+          `A${range.firstRow}:Q${range.lastRow}`,
+        ])
+      );
+    })().catch((error) => {
+      callMonthRangesPromise = null;
+      throw error;
+    });
+    return callMonthRangesPromise;
+  }
+
+  async function detectLatestCallRange() {
+    try {
+      const ranges = await detectCallMonthRanges();
+      const latest = [...ranges.entries()].sort(
+        ([monthA], [monthB]) => monthSortValue(monthB) - monthSortValue(monthA)
+      )[0];
+      if (latest) {
+        const range = latest[1];
         console.info("Latest Google Sheet month range:", range);
         return range;
       }
@@ -618,7 +647,11 @@
       storesPromise,
       loadCallRange(latestRange, [], "Recent calls"),
     ]);
-    const calls = mergeCalls(fallback.calls, recentCalls);
+    const currentCalls = window.DASHBOARD_DATA?.calls || [];
+    const calls = mergeCalls(
+      mergeCalls(fallback.calls, currentCalls),
+      recentCalls
+    );
 
     enrichCallsWithStores(calls, stores);
     const data = {
@@ -668,6 +701,53 @@
     return immediate;
   };
 
+  window.loadDashboardMonth = function loadDashboardMonth(monthValue) {
+    const monthKey = monthKeyFromText(monthValue);
+    if (!monthKey) return Promise.resolve(window.DASHBOARD_DATA);
+    window.DASHBOARD_MONTH_PROMISES ||= {};
+    if (window.DASHBOARD_MONTH_PROMISES[monthKey]) {
+      return window.DASHBOARD_MONTH_PROMISES[monthKey];
+    }
+
+    window.DASHBOARD_MONTH_PROMISES[monthKey] = (async () => {
+      const ranges = await detectCallMonthRanges();
+      const range = ranges.get(monthKey);
+      if (!range) {
+        console.warn(`No Google Sheet range found for ${monthKey}.`);
+        return window.DASHBOARD_DATA;
+      }
+
+      const monthCalls = await loadCallRange(range, null, `${monthKey} calls`);
+      if (!Array.isArray(monthCalls) || !monthCalls.length) {
+        console.warn(`Google Sheet returned no calls for ${monthKey}.`);
+        return window.DASHBOARD_DATA;
+      }
+
+      const current = window.DASHBOARD_DATA || { stores: [], calls: [] };
+      const stores = current.stores || [];
+      const calls = mergeCalls(current.calls, monthCalls);
+      enrichCallsWithStores(calls, stores);
+      const data = {
+        ...current,
+        generatedAt: new Date().toISOString(),
+        stores,
+        calls,
+      };
+      window.DASHBOARD_DATA = data;
+      await writeDashboardCache(data);
+      return data;
+    })()
+      .catch((error) => {
+        console.warn(`Loading ${monthKey} from Google Sheet failed.`, error);
+        return window.DASHBOARD_DATA;
+      })
+      .finally(() => {
+        delete window.DASHBOARD_MONTH_PROMISES[monthKey];
+      });
+
+    return window.DASHBOARD_MONTH_PROMISES[monthKey];
+  };
+
   window.loadDashboardHistory = function loadDashboardHistory() {
     if (window.DASHBOARD_DATA?.historyComplete) {
       return Promise.resolve(window.DASHBOARD_DATA);
@@ -677,7 +757,10 @@
     window.DASHBOARD_HISTORY_PROMISE = (async () => {
       let calls = window.DASHBOARD_DATA?.calls || [];
       for (const range of CALL_HISTORY_RANGES) {
-        const chunk = await loadCallRange(range, [], `Call history ${range}`);
+        const chunk = await loadCallRange(range, null, `Call history ${range}`);
+        if (!Array.isArray(chunk) || !chunk.length) {
+          throw new Error(`Call history range ${range} did not load.`);
+        }
         calls = mergeCalls(calls, chunk);
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
