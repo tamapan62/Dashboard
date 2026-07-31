@@ -15,9 +15,10 @@
   };
   const CACHE_DB_NAME = "stat-cpr-dashboard-cache";
   const CACHE_STORE_NAME = "dashboard-data";
-  const CACHE_KEY = ["v7-all-months-age-equipment", config.storesCsvUrl, config.callsCsvUrl].join("|");
+  const CACHE_KEY = ["v9-create-date-time", config.storesCsvUrl, config.callsCsvUrl].join("|");
   const CALL_HEADER_RANGE = "A1:Q1";
-  const CALL_RECENT_RANGE = "A53780:Q70509";
+  const CALL_MONTH_INDEX_RANGE = "E1:E200000";
+  const CALL_RECENT_FALLBACK_RANGE = "A100000:Q200000";
   const CALL_HISTORY_RANGES = [
     "A1:Q20000",
     "A20001:Q40000",
@@ -322,6 +323,21 @@
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
+  function formatDateTimeValue(value, monthHint = "") {
+    const text = cleanText(value);
+    const date = parseDateValue(text, monthHint);
+    if (!date) return text;
+    const dateText = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(date.getDate()).padStart(2, "0")}`;
+    const timeMatch = text.match(/[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (!timeMatch) return dateText;
+    return `${dateText} ${String(Number(timeMatch[1])).padStart(2, "0")}:${timeMatch[2]}:${
+      timeMatch[3] || "00"
+    }`;
+  }
+
   function monthFromDate(value, monthHint = "") {
     const date = parseDateValue(value, monthHint);
     if (!date) return "";
@@ -380,6 +396,7 @@
       .map((sourceRow) => {
         const item = mapRow(sourceRow, callAliases);
         item.columnQ = cleanText(sourceRow.age_equipment ?? item.ageEquipment);
+        item.dateTime = formatDateTimeValue(item.date, item.month);
         const parsedDate = parseDateValue(item.date, item.month);
         if (parsedDate) {
           item.date = `${parsedDate.getFullYear()}-${String(
@@ -399,8 +416,10 @@
   }
 
   async function fetchCsv(url) {
-    const finalUrl = csvUrl(url);
-    const response = await fetch(finalUrl, { cache: "default" });
+    const freshUrl = new URL(csvUrl(url));
+    freshUrl.searchParams.set("_dashboard_refresh", Date.now().toString());
+    const finalUrl = freshUrl.toString();
+    const response = await fetch(finalUrl, { cache: "no-store" });
     if (!response.ok)
       throw new Error(
         `Google Sheet load failed: ${response.status} ${finalUrl}`
@@ -427,6 +446,51 @@
     const rangedUrl = new URL(csvUrl(url));
     rangedUrl.searchParams.set("range", range);
     return rangedUrl.toString();
+  }
+
+  function monthSortValue(value) {
+    const monthIndex = monthHintIndex(value);
+    const yearMatch = cleanText(value).match(/(?:19|20)?\d{2}/g);
+    if (monthIndex == null || !yearMatch?.length) return -Infinity;
+    let year = Number(yearMatch[yearMatch.length - 1]);
+    if (year < 100) year += 2000;
+    if (year > 2400) year -= 543;
+    return year * 12 + monthIndex;
+  }
+
+  async function detectLatestCallRange() {
+    try {
+      const monthCsv = await fetchCsv(
+        sheetRangeUrl(config.callsCsvUrl, CALL_MONTH_INDEX_RANGE)
+      );
+      const rows = parseCsv(monthCsv);
+      let latestMonth = -Infinity;
+      let firstRow = 0;
+      let lastRow = 0;
+
+      rows.forEach((row, index) => {
+        const sortValue = monthSortValue(row[0]);
+        if (!Number.isFinite(sortValue)) return;
+        const sheetRow = index + 1;
+        if (sortValue > latestMonth) {
+          latestMonth = sortValue;
+          firstRow = sheetRow;
+          lastRow = sheetRow;
+        } else if (sortValue === latestMonth) {
+          firstRow = firstRow || sheetRow;
+          lastRow = sheetRow;
+        }
+      });
+
+      if (firstRow && lastRow >= firstRow) {
+        const range = `A${firstRow}:Q${lastRow}`;
+        console.info("Latest Google Sheet month range:", range);
+        return range;
+      }
+    } catch (error) {
+      console.warn("Latest Google Sheet month range detection failed.", error);
+    }
+    return CALL_RECENT_FALLBACK_RANGE;
   }
 
   async function loadCallRange(range, fallbackRows = [], label = "Calls") {
@@ -543,9 +607,16 @@
   }
 
   async function fetchFreshDashboard(fallback) {
+    const storesPromise = loadSheetRows(
+      config.storesCsvUrl,
+      mapStores,
+      fallback.stores,
+      "Stores"
+    );
+    const latestRange = await detectLatestCallRange();
     const [stores, recentCalls] = await Promise.all([
-      loadSheetRows(config.storesCsvUrl, mapStores, fallback.stores, "Stores"),
-      loadCallRange(CALL_RECENT_RANGE, [], "Recent calls"),
+      storesPromise,
+      loadCallRange(latestRange, [], "Recent calls"),
     ]);
     const calls = mergeCalls(fallback.calls, recentCalls);
 

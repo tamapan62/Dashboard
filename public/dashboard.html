@@ -198,27 +198,11 @@
         justify-content: flex-start;
       }
 
-      .logo-stat {
-        display: grid;
-        grid-template-columns: repeat(5, 10px);
-        align-items: end;
-        gap: 3px;
-        height: 38px;
-        margin: 0 auto 2px;
-      }
-
-      .logo-stat span {
-        width: 10px;
-        border: 1.5px solid #51606b;
-        border-radius: 2px;
-      }
-
-      .logo-label {
-        font-size: 16px;
-        font-style: italic;
-        font-weight: 800;
-        color: #4a4a4a;
-        text-align: center;
+      .stat-cpr-logo-img {
+        width: 88px;
+        height: 83px;
+        display: block;
+        object-fit: contain;
       }
 
       .retailink-mark {
@@ -2156,14 +2140,7 @@
           <div class="top-brand-stack">
             <div class="logos" aria-hidden="true">
               <div class="logo-block">
-                <div class="logo-stat">
-                  <span style="height: 13px; background: #ef4444;"></span>
-                  <span style="height: 18px; background: #facc15;"></span>
-                  <span style="height: 24px; background: #38bdf8;"></span>
-                  <span style="height: 31px; background: #34d399;"></span>
-                  <span style="height: 38px; background: #2dd4bf;"></span>
-                </div>
-                <div class="logo-label">Stat CPR</div>
+                <img class="stat-cpr-logo-img" src="stat-cpr-project-logo.png?v=20260731-logo1" alt="ปฏิบัติการโครงการพิเศษลูกค้า 7-Eleven" />
               </div>
               <div class="logo-block">
                 <div class="retailink-mark">
@@ -2406,9 +2383,9 @@
 
     <div class="footer-brand">Data Studio</div>
 
-    <script src="./dashboard-data.js?v=20260730-months1"></script>
+    <script src="./dashboard-data.js?v=20260731-time1"></script>
     <script src="./google-sheets-config.js?v=20260720-speed1"></script>
-    <script src="./dashboard-google-sheets.js?v=20260730-months1"></script>
+    <script src="./dashboard-google-sheets.js?v=20260731-time1"></script>
     <script>
       (async function () {
       const raw = window.loadDashboardData ? await window.loadDashboardData() : (window.DASHBOARD_DATA || { stores: [], calls: [] });
@@ -3011,7 +2988,7 @@
             item.ticket || "-",
             item.storeCode || "-",
             item.storeName || "-",
-            item.date || "-",
+            displayCallDateTime(item),
             item.team || "-",
             index + 1,
             item.equipment || "-",
@@ -3621,6 +3598,10 @@
         return value || "ไม่พบข้อมูล";
       }
 
+      function displayCallDateTime(item) {
+        return String(item.dateTime || item.date || "-").trim() || "-";
+      }
+
       function hasStatusData(items) {
         return items.some((item) => callStatusText(item));
       }
@@ -3990,7 +3971,7 @@
 
       function renderDailyTicketTable(items) {
         const pageSize = 100;
-        const allRows = items.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.ticket).localeCompare(String(b.ticket)));
+        const allRows = items.slice().sort((a, b) => displayCallDateTime(a).localeCompare(displayCallDateTime(b)) || String(a.ticket).localeCompare(String(b.ticket)));
         const pageCount = Math.max(1, Math.ceil(allRows.length / pageSize));
         if (dailyTicketPage >= pageCount) dailyTicketPage = pageCount - 1;
         const start = dailyTicketPage * pageSize;
@@ -3998,14 +3979,14 @@
         const table = document.getElementById("dailyTicketTable");
         setExportRows(table, "daily-ticket-all", [
           ["Ticket Number", "Store Code", "Store Name", "Create Date", "Team", "Call", "CI", "Problem Type", "System", "Damaged Parts", "Cause", "age_equipment", "Status"],
-          ...allRows.map((item, index) => [item.ticket || "-", item.storeCode || "-", item.storeName || "-", item.date || "-", item.team || "-", index + 1, item.equipment || "-", item.problem || "-", item.system || "-", item.parts || "-", item.cause || "-", rawColumnQText(item), callStatusText(item) || "ไม่ระบุ"]),
+          ...allRows.map((item, index) => [item.ticket || "-", item.storeCode || "-", item.storeName || "-", displayCallDateTime(item), item.team || "-", index + 1, item.equipment || "-", item.problem || "-", item.system || "-", item.parts || "-", item.cause || "-", rawColumnQText(item), callStatusText(item) || "ไม่ระบุ"]),
         ]);
         table.innerHTML = `
           <colgroup>
             <col style="width:145px" />
             <col style="width:105px" />
             <col style="width:260px" />
-            <col style="width:135px" />
+            <col style="width:175px" />
             <col style="width:90px" />
             <col style="width:65px" />
             <col style="width:250px" />
@@ -4039,7 +4020,7 @@
                 <td class="left">${escapeHtml(item.ticket || "-")}</td>
                 <td class="left">${escapeHtml(item.storeCode || "-")}</td>
                 <td class="left" title="${escapeHtml(item.storeName || "-")}">${escapeHtml(item.storeName || "-")}</td>
-                <td class="left">${escapeHtml(item.date || "-")}</td>
+                <td class="left">${escapeHtml(displayCallDateTime(item))}</td>
                 <td class="left">${escapeHtml(item.team || "-")}</td>
                 <td>${start + index + 1}</td>
                 <td class="left" title="${escapeHtml(item.equipment || "-")}">${escapeHtml(item.equipment || "-")}</td>
@@ -4738,7 +4719,7 @@
 
       function renderFocusTickets(items) {
         const pageSize = 100;
-        const allRows = items.slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+        const allRows = items.slice().sort((a, b) => displayCallDateTime(b).localeCompare(displayCallDateTime(a)));
         const pageCount = Math.max(1, Math.ceil(allRows.length / pageSize));
         if (focusTicketPage >= pageCount) focusTicketPage = pageCount - 1;
         const start = focusTicketPage * pageSize;
@@ -4770,7 +4751,7 @@
             <col style="width:135px" />
             <col style="width:105px" />
             <col style="width:260px" />
-            <col style="width:130px" />
+            <col style="width:175px" />
             <col style="width:85px" />
             <col style="width:60px" />
             <col style="width:230px" />
@@ -4809,7 +4790,7 @@
                 <td class="left">${escapeHtml(item.ticket || "-")}</td>
                 <td class="left" data-ticket-filter="storeCode">${escapeHtml(item.storeCode || "-")}</td>
                 <td class="left" data-ticket-filter="storeCode" title="${escapeHtml(item.storeName || "-")}">${escapeHtml(item.storeName || "-")}</td>
-                <td class="left">${escapeHtml(item.date || "-")}</td>
+                <td class="left">${escapeHtml(displayCallDateTime(item))}</td>
                 <td class="left" data-ticket-filter="team">${escapeHtml(item.team || "-")}</td>
                 <td>${start + index + 1}</td>
                 <td class="left" data-ticket-filter="item" title="${escapeHtml(item.equipment || "-")}">${escapeHtml(item.equipment || "-")}</td>
@@ -5096,7 +5077,7 @@
 
       function renderMonthTicketTable(items) {
         const pageSize = 100;
-        const allRows = items.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.ticket).localeCompare(String(b.ticket)));
+        const allRows = items.slice().sort((a, b) => displayCallDateTime(a).localeCompare(displayCallDateTime(b)) || String(a.ticket).localeCompare(String(b.ticket)));
         const pageCount = Math.max(1, Math.ceil(allRows.length / pageSize));
         if (monthPageState.ticket >= pageCount) monthPageState.ticket = pageCount - 1;
         const start = monthPageState.ticket * pageSize;
@@ -5128,7 +5109,7 @@
             <col style="width:145px" />
             <col style="width:105px" />
             <col style="width:260px" />
-            <col style="width:135px" />
+            <col style="width:175px" />
             <col style="width:80px" />
             <col style="width:70px" />
             <col style="width:250px" />
@@ -5167,7 +5148,7 @@
                 <td class="left">${escapeHtml(item.ticket || "-")}</td>
                 <td class="left" data-ticket-filter="storeCode">${escapeHtml(item.storeCode || "-")}</td>
                 <td class="left" data-ticket-filter="storeCode" title="${escapeHtml(item.storeName || "-")}">${escapeHtml(item.storeName || "-")}</td>
-                <td class="left">${escapeHtml(item.date || "-")}</td>
+                <td class="left">${escapeHtml(displayCallDateTime(item))}</td>
                 <td class="left" data-ticket-filter="team">${escapeHtml(item.team || "-")}</td>
                 <td>${start + index + 1}</td>
                 <td class="left" data-ticket-filter="item" title="${escapeHtml(item.equipment || "-")}">${escapeHtml(item.equipment || "-")}</td>
@@ -5236,7 +5217,7 @@
       }
 
       function renderTicketTable(items) {
-        const rows = items.slice().sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 200);
+        const rows = items.slice().sort((a, b) => displayCallDateTime(b).localeCompare(displayCallDateTime(a))).slice(0, 200);
         const table = document.getElementById("monthTicketTable");
         if (!rows.length) {
           table.innerHTML = `<tr><td class="empty-note">ไม่พบรายการแจ้งซ่อมเดือนนี้</td></tr>`;
@@ -5267,7 +5248,7 @@
             ${rows.map((item) => `
               <tr>
                 <td>${escapeHtml(item.ticket)}</td>
-                <td>${escapeHtml(item.date)}</td>
+                <td>${escapeHtml(displayCallDateTime(item))}</td>
                 <td>${escapeHtml(item.storeCode)}</td>
                 <td class="text-left" title="${escapeHtml(item.storeName)}">${escapeHtml(item.storeName)}</td>
                 <td class="text-left" title="${escapeHtml(item.equipment)}">${escapeHtml(item.equipment)}</td>
