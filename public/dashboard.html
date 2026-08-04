@@ -2400,16 +2400,15 @@
 
     <div class="footer-brand">Data Studio</div>
 
-    <script src="./dashboard-data.js?v=20260804-updatetime1"></script>
+    <script src="./dashboard-data.js?v=20260804-lastrow1"></script>
     <script src="./google-sheets-config.js?v=20260720-speed1"></script>
-    <script src="./dashboard-google-sheets.js?v=20260804-updatetime1"></script>
+    <script src="./dashboard-google-sheets.js?v=20260804-lastrow1"></script>
     <script>
       (async function () {
       const raw = window.loadDashboardData ? await window.loadDashboardData() : (window.DASHBOARD_DATA || { stores: [], calls: [] });
       document.getElementById("dashboardLoading")?.remove();
       const stores = raw.stores || [];
       const calls = raw.calls || [];
-      let dashboardUpdatedAt = raw.sourceUpdatedAt || raw.generatedAt || "";
       const storeByCode = new Map(stores.map((store) => [String(store.code || "").trim(), store]));
       const storeByTeam = new Map();
       stores.forEach((store) => {
@@ -3422,7 +3421,6 @@
         if (!fresh || !Array.isArray(fresh.calls) || !Array.isArray(fresh.stores)) return;
         stores.splice(0, stores.length, ...fresh.stores);
         calls.splice(0, calls.length, ...fresh.calls);
-        dashboardUpdatedAt = fresh.sourceUpdatedAt || fresh.generatedAt || dashboardUpdatedAt;
         monthOrder = buildMonthOrder(calls);
         chartMonthOrder = buildLatestYearMonthOrder(monthOrder);
         if (!monthOrder.includes(activeMonth)) activeMonth = monthOrder[0] || activeMonth;
@@ -4526,23 +4524,55 @@
 
       function renderSheetUpdateTime() {
         const element = document.getElementById("sheetUpdateTime");
-        if (!element || !dashboardUpdatedAt) return;
-        const date = new Date(dashboardUpdatedAt);
-        if (Number.isNaN(date.getTime())) return;
-        const parts = Object.fromEntries(
-          new Intl.DateTimeFormat("en-GB", {
-            timeZone: "Asia/Bangkok",
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          })
-            .formatToParts(date)
-            .map((part) => [part.type, part.value])
-        );
-        element.textContent = `อัปเดตข้อมูล Google Sheet: ${parts.day} ${parts.month} ${parts.year} เวลา ${parts.hour}:${parts.minute}`;
+        if (!element) return;
+        const latest = calls.reduce((current, item) => {
+          const text = String(item.dateTime || item.date || "").trim();
+          const match = text.match(
+            /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/
+          );
+          let parts = null;
+          if (match) {
+            parts = {
+              year: Number(match[1]),
+              month: Number(match[2]),
+              day: Number(match[3]),
+              hour: Number(match[4] || 0),
+              minute: Number(match[5] || 0),
+              second: Number(match[6] || 0),
+            };
+          } else {
+            const date = parseDataDate(text, item.month);
+            if (date && !Number.isNaN(date.getTime())) {
+              parts = {
+                year: date.getFullYear(),
+                month: date.getMonth() + 1,
+                day: date.getDate(),
+                hour: date.getHours(),
+                minute: date.getMinutes(),
+                second: date.getSeconds(),
+              };
+            }
+          }
+          if (!parts) return current;
+          parts.sortValue = Date.UTC(
+            parts.year,
+            parts.month - 1,
+            parts.day,
+            parts.hour,
+            parts.minute,
+            parts.second
+          );
+          return !current || parts.sortValue > current.sortValue ? parts : current;
+        }, null);
+        if (!latest) {
+          element.textContent = "";
+          return;
+        }
+        const monthName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][latest.month - 1];
+        const time = [latest.hour, latest.minute, latest.second]
+          .map((value) => String(value).padStart(2, "0"))
+          .join(":");
+        element.textContent = `ข้อมูลล่าสุดใน Google Sheet: ${latest.day} ${monthName} ${latest.year} เวลา ${time}`;
       }
 
       function renderProductPage() {

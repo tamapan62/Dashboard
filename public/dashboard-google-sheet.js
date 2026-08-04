@@ -68,7 +68,6 @@
     ["ธ.ค.", 11],
     ["ธันวาคม", 11],
   ]);
-  let latestSheetResponseAt = "";
 
   const storeAliases = {
     area: ["area", "retailink area", "พื้นที่", "เขต"],
@@ -435,11 +434,6 @@
       throw new Error(
         `Google Sheet load failed: ${response.status} ${finalUrl}`
       );
-    const responseDate = response.headers.get("date");
-    const fetchedAt = responseDate ? new Date(responseDate) : new Date();
-    if (!Number.isNaN(fetchedAt.getTime())) {
-      latestSheetResponseAt = fetchedAt.toISOString();
-    }
     return response.text();
   }
 
@@ -740,8 +734,6 @@
     enrichCallsWithStores(calls, stores);
     const data = {
       generatedAt: new Date().toISOString(),
-      sourceUpdatedAt:
-        latestSheetResponseAt || fallback.sourceUpdatedAt || new Date().toISOString(),
       sourceFiles: {
         stores: config.storesCsvUrl
           ? "Google Sheets"
@@ -816,7 +808,6 @@
       const data = {
         ...current,
         generatedAt: new Date().toISOString(),
-        sourceUpdatedAt: latestSheetResponseAt || current.sourceUpdatedAt,
         stores,
         calls,
       };
@@ -858,8 +849,6 @@
       const data = {
         ...(window.DASHBOARD_DATA || {}),
         generatedAt: new Date().toISOString(),
-        sourceUpdatedAt:
-          latestSheetResponseAt || window.DASHBOARD_DATA?.sourceUpdatedAt,
         stores,
         calls,
         historyComplete: true,
