@@ -15,17 +15,17 @@
   };
   const CACHE_DB_NAME = "stat-cpr-dashboard-cache";
   const CACHE_STORE_NAME = "dashboard-data";
-  const CACHE_KEY = ["v10-month-on-demand", config.storesCsvUrl, config.callsCsvUrl].join("|");
-  const CALL_HEADER_RANGE = "A1:Q1";
-  const CALL_MONTH_INDEX_RANGE = "E1:E200000";
-  const CALL_RECENT_FALLBACK_RANGE = "A100000:Q200000";
-  const CALL_HISTORY_RANGES = [
-    "A1:Q20000",
-    "A20001:Q40000",
-    "A40001:Q60000",
-    "A60001:Q80000",
-    "A80001:Q100000",
-    "A100001:Q130000",
+  const CACHE_KEY = ["v11-dynamic-call-schema", config.storesCsvUrl, config.callsCsvUrl].join("|");
+  const CALL_HEADER_SCAN_RANGE = "A1:ZZ1";
+  const CALL_FALLBACK_LAST_COLUMN = "W";
+  const CALL_RECENT_FALLBACK_RANGE = `A100000:${CALL_FALLBACK_LAST_COLUMN}200000`;
+  const CALL_HISTORY_ROW_RANGES = [
+    [1, 20000],
+    [20001, 40000],
+    [40001, 60000],
+    [60001, 80000],
+    [80001, 100000],
+    [100001, 130000],
   ];
 
   const MONTHS = [
@@ -89,6 +89,8 @@
   const callAliases = {
     ticket: [
       "ticket",
+      "ticket_number",
+      "ticket_num",
       "ticket number",
       "ticket num",
       "ticket num...",
@@ -103,19 +105,21 @@
       "ชื่อสาขา",
       "ชื่อร้าน",
     ],
-    date: ["date", "create date", "created date", "วันที่", "วันที่สร้าง"],
+    date: ["date", "create_date", "create date", "created date", "วันที่", "วันที่สร้าง"],
     month: ["month", "month name", "เดือน"],
     area: ["area", "พื้นที่", "เขต"],
     team: ["team", "ทีม"],
-    callType: ["call type", "call...", "call", "ประเภท call"],
+    callType: ["call_type", "call type", "type_call", "call...", "call", "ประเภท call"],
     equipment: ["equipment", "item", "ci", "อุปกรณ์"],
     ageEquipment: ["age_equipment"],
     problem: ["problem type", "problem", "อาการ", "ปัญหา"],
     system: ["system", "ระบบ"],
-    parts: ["damaged parts", "damaged parts (...", "parts", "ชิ้นส่วน"],
+    parts: ["damage", "damaged parts", "damaged parts (...", "parts", "ชิ้นส่วน"],
     cause: ["cause", "cause สาเหตุ", "สาเหตุ"],
     product: [
       "product type",
+      "product_type",
+      "product_t",
       "ci_product type",
       "ci product type",
       "product",
@@ -130,6 +134,12 @@
       "สถานะงาน",
       "สถานะปิดงาน",
     ],
+    priority: ["priority"],
+    description: ["description"],
+    solution: ["solution"],
+    closureCode: ["closure_code", "closure code"],
+    ciCode: ["ci_code", "ci code"],
+    typeCall: ["type_call", "type call"],
     gm: ["gm"],
     dept: ["dept", "department", "ฝ่าย", "ผู้ดูแล", "ฝ่ายที่ดูแล"],
   };
@@ -395,7 +405,7 @@
     const calls = rows
       .map((sourceRow) => {
         const item = mapRow(sourceRow, callAliases);
-        item.columnQ = cleanText(sourceRow.age_equipment ?? item.ageEquipment);
+        item.columnQ = cleanText(item.ageEquipment);
         item.dateTime = formatDateTimeValue(item.date, item.month);
         const parsedDate = parseDateValue(item.date, item.month);
         if (parsedDate) {
@@ -448,6 +458,69 @@
     return rangedUrl.toString();
   }
 
+  function columnLetter(index) {
+    let value = Number(index) + 1;
+    let result = "";
+    while (value > 0) {
+      const remainder = (value - 1) % 26;
+      result = String.fromCharCode(65 + remainder) + result;
+      value = Math.floor((value - 1) / 26);
+    }
+    return result;
+  }
+
+  function headerMatchesAliases(header, aliases) {
+    const normalizedHeader = normalizeHeader(header);
+    return aliases.some(
+      (alias) => normalizeHeader(alias) === normalizedHeader
+    );
+  }
+
+  function csvCell(value) {
+    const text = cleanText(value);
+    return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+
+  let callSheetLayoutPromise = null;
+
+  function detectCallSheetLayout() {
+    if (callSheetLayoutPromise) return callSheetLayoutPromise;
+    callSheetLayoutPromise = (async () => {
+      const rawHeaderText = (
+        await fetchCsv(sheetRangeUrl(config.callsCsvUrl, CALL_HEADER_SCAN_RANGE))
+      ).trimEnd();
+      const headers = (parseCsv(rawHeaderText)[0] || []).map(cleanText);
+      const lastHeaderIndex = headers.reduce(
+        (last, header, index) => (header ? index : last),
+        -1
+      );
+      const monthIndex = headers.findIndex((header) =>
+        headerMatchesAliases(header, callAliases.month)
+      );
+      if (monthIndex < 0) {
+        throw new Error("Google Sheet month header was not found.");
+      }
+      const effectiveLastHeaderIndex = lastHeaderIndex >= 0 ? lastHeaderIndex : 22;
+      const activeHeaders = headers.slice(0, effectiveLastHeaderIndex + 1);
+      const lastColumn = columnLetter(effectiveLastHeaderIndex);
+      const layout = {
+        headerText: activeHeaders.map(csvCell).join(","),
+        headers: activeHeaders,
+        lastColumn,
+        monthColumn: columnLetter(monthIndex),
+      };
+      console.info(
+        "Google Sheet call schema detected:",
+        `${activeHeaders.length} columns, month=${layout.monthColumn}, last=${layout.lastColumn}`
+      );
+      return layout;
+    })().catch((error) => {
+      callSheetLayoutPromise = null;
+      throw error;
+    });
+    return callSheetLayoutPromise;
+  }
+
   function monthSortValue(value) {
     const monthIndex = monthHintIndex(value);
     const yearMatch = cleanText(value).match(/(?:19|20)?\d{2}/g);
@@ -473,8 +546,12 @@
   function detectCallMonthRanges() {
     if (callMonthRangesPromise) return callMonthRangesPromise;
     callMonthRangesPromise = (async () => {
+      const layout = await detectCallSheetLayout();
       const monthCsv = await fetchCsv(
-        sheetRangeUrl(config.callsCsvUrl, CALL_MONTH_INDEX_RANGE)
+        sheetRangeUrl(
+          config.callsCsvUrl,
+          `${layout.monthColumn}1:${layout.monthColumn}200000`
+        )
       );
       const rows = parseCsv(monthCsv);
       const ranges = new Map();
@@ -495,7 +572,7 @@
       return new Map(
         [...ranges.entries()].map(([monthKey, range]) => [
           monthKey,
-          `A${range.firstRow}:Q${range.lastRow}`,
+          `A${range.firstRow}:${layout.lastColumn}${range.lastRow}`,
         ])
       );
     })().catch((error) => {
@@ -524,11 +601,12 @@
 
   async function loadCallRange(range, fallbackRows = [], label = "Calls") {
     try {
+      const layout = await detectCallSheetLayout();
       const rangeText = await fetchCsv(sheetRangeUrl(config.callsCsvUrl, range));
-      const hasHeader = range === "A1:Q20000";
+      const hasHeader = /^A1:/i.test(range);
       const csvText = hasHeader
         ? rangeText
-        : `${(await fetchCsv(sheetRangeUrl(config.callsCsvUrl, CALL_HEADER_RANGE))).trimEnd()}\n${rangeText}`;
+        : `${layout.headerText}\n${rangeText}`;
       const rows = mapCalls(toObjects(csvText));
       console.info(`${label} Google Sheet rows loaded:`, rows.length);
       return rows.length ? rows : fallbackRows;
@@ -756,7 +834,9 @@
 
     window.DASHBOARD_HISTORY_PROMISE = (async () => {
       let calls = window.DASHBOARD_DATA?.calls || [];
-      for (const range of CALL_HISTORY_RANGES) {
+      const layout = await detectCallSheetLayout();
+      for (const [startRow, endRow] of CALL_HISTORY_ROW_RANGES) {
+        const range = `A${startRow}:${layout.lastColumn}${endRow}`;
         const chunk = await loadCallRange(range, null, `Call history ${range}`);
         if (!Array.isArray(chunk) || !chunk.length) {
           throw new Error(`Call history range ${range} did not load.`);
