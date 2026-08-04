@@ -171,6 +171,20 @@
         font-weight: 500;
       }
 
+      .title-heading-row {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 5px 14px;
+      }
+
+      .sheet-update-time {
+        color: #5f6368;
+        font-size: 15px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
       .subtitle {
         margin-top: 3px;
         font-size: 22px;
@@ -2133,7 +2147,10 @@
       <main class="content">
         <div class="top-row">
           <div>
-            <h1>Call ต่อสาขา 7Eleven : E1 (A) : <span id="reportDateRange">1 Sep 2025 - 8 Jul 2026</span></h1>
+            <div class="title-heading-row">
+              <h1>Call ต่อสาขา 7Eleven : E1 (A) : <span id="reportDateRange">1 Sep 2025 - 8 Jul 2026</span></h1>
+              <div class="sheet-update-time" id="sheetUpdateTime" aria-live="polite"></div>
+            </div>
             <div class="subtitle">ใช้เงื่อนไข E1 (A) New 15 อุปกรณ์</div>
           </div>
 
@@ -2383,15 +2400,16 @@
 
     <div class="footer-brand">Data Studio</div>
 
-    <script src="./dashboard-data.js?v=20260804-schema1"></script>
+    <script src="./dashboard-data.js?v=20260804-updatetime1"></script>
     <script src="./google-sheets-config.js?v=20260720-speed1"></script>
-    <script src="./dashboard-google-sheets.js?v=20260804-schema1"></script>
+    <script src="./dashboard-google-sheets.js?v=20260804-updatetime1"></script>
     <script>
       (async function () {
       const raw = window.loadDashboardData ? await window.loadDashboardData() : (window.DASHBOARD_DATA || { stores: [], calls: [] });
       document.getElementById("dashboardLoading")?.remove();
       const stores = raw.stores || [];
       const calls = raw.calls || [];
+      let dashboardUpdatedAt = raw.sourceUpdatedAt || raw.generatedAt || "";
       const storeByCode = new Map(stores.map((store) => [String(store.code || "").trim(), store]));
       const storeByTeam = new Map();
       stores.forEach((store) => {
@@ -3404,6 +3422,7 @@
         if (!fresh || !Array.isArray(fresh.calls) || !Array.isArray(fresh.stores)) return;
         stores.splice(0, stores.length, ...fresh.stores);
         calls.splice(0, calls.length, ...fresh.calls);
+        dashboardUpdatedAt = fresh.sourceUpdatedAt || fresh.generatedAt || dashboardUpdatedAt;
         monthOrder = buildMonthOrder(calls);
         chartMonthOrder = buildLatestYearMonthOrder(monthOrder);
         if (!monthOrder.includes(activeMonth)) activeMonth = monthOrder[0] || activeMonth;
@@ -4505,6 +4524,27 @@
         }
       }
 
+      function renderSheetUpdateTime() {
+        const element = document.getElementById("sheetUpdateTime");
+        if (!element || !dashboardUpdatedAt) return;
+        const date = new Date(dashboardUpdatedAt);
+        if (Number.isNaN(date.getTime())) return;
+        const parts = Object.fromEntries(
+          new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Asia/Bangkok",
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          })
+            .formatToParts(date)
+            .map((part) => [part.type, part.value])
+        );
+        element.textContent = `อัปเดตข้อมูล Google Sheet: ${parts.day} ${parts.month} ${parts.year} เวลา ${parts.hour}:${parts.minute}`;
+      }
+
       function renderProductPage() {
         showPage("productPage");
         renderProductTrendChart();
@@ -5302,6 +5342,7 @@
         document.querySelector(".content")?.classList.toggle("focus-mode", activePage === "focus");
         document.querySelector(".content")?.classList.toggle("month-mode", activePage === "month");
         renderPageHeading();
+        renderSheetUpdateTime();
         if (activePage === "daily") {
           renderDailyPage();
         } else if (activePage === "summary") {
