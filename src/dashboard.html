@@ -2010,12 +2010,28 @@
       }
 
       .content.month-mode .focus-gm-wrap {
-        max-height: none;
-        overflow: visible;
+        max-height: 410px;
+        overflow-x: auto;
+        overflow-y: auto;
+        scrollbar-gutter: stable;
       }
 
       .content.month-mode #monthTeamTable {
         min-width: 960px;
+      }
+
+      .content.month-mode .focus-gm-wrap th {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+      }
+
+      .content.month-mode .focus-gm-wrap .focus-small-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 4;
+        background: #fff;
+        padding-right: 6px;
       }
 
       .focus-panel {
@@ -2495,9 +2511,9 @@
 
     <div class="footer-brand">Data Studio</div>
 
-    <script src="./dashboard-data.js?v=20260804-sidebar2"></script>
+    <script src="./dashboard-data.js?v=20260804-scroll1"></script>
     <script src="./google-sheets-config.js?v=20260720-speed1"></script>
-    <script src="./dashboard-google-sheets.js?v=20260804-sidebar2"></script>
+    <script src="./dashboard-google-sheets.js?v=20260804-scroll1"></script>
     <script>
       (async function () {
       const raw = window.loadDashboardData ? await window.loadDashboardData() : (window.DASHBOARD_DATA || { stores: [], calls: [] });
@@ -5257,9 +5273,9 @@
         const rows = [...grouped.values()]
           .filter((row) => row.calls || row.stores)
           .sort((a, b) => ratio(b.stores, b.calls) - ratio(a.stores, a.calls) || b.calls - a.calls);
-        const pageSize = 10;
+        const pageSize = Math.max(1, rows.length);
         const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
-        if (monthPageState.team >= pageCount) monthPageState.team = pageCount - 1;
+        monthPageState.team = 0;
         const start = monthPageState.team * pageSize;
         const shown = rows.slice(start, start + pageSize);
         const table = document.getElementById("monthTeamTable");
